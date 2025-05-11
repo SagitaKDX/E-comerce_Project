@@ -1,0 +1,31 @@
+# Force GitHub to correctly detect languages used in the project
+*.html linguist-detectable=true
+*.css linguist-detectable=true
+*.js linguist-detectable=true
+*.py linguist-detectable=true
+
+# Identify Python as the primary language
+*.py linguist-language=Python
+
+# Prevent GitHub from marking these as vendored
+*.js linguist-vendored=false
+*.css linguist-vendored=false
+*.html linguist-vendored=false
+
+# Explicitly mark Django template files
+templates/**/*.html linguist-language=HTML
+
+# Mark static files as the correct language
+static/js/*.js linguist-language=JavaScript
+static/css/*.css linguist-language=CSS
+
+# Ensure that staticfiles are properly detected as well
+staticfiles/js/*.js linguist-language=JavaScript
+staticfiles/css/*.css linguist-language=CSS
+
+# Prevent third-party libraries from being included in language statistics
+staticfiles/admin/** linguist-vendored=true
+**/vendor/** linguist-vendored=true
+**/jquery*.js linguist-vendored=true
+**/bootstrap*.js linguist-vendored=true
+**/bootstrap*.css linguist-vendored=true 
