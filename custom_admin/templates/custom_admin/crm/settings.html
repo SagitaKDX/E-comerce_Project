@@ -1,0 +1,119 @@
+{% extends 'custom_admin/crm/base.html' %}
+
+{% block title %}CRM Settings{% endblock %}
+
+{% block page_title %}CRM Settings{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'crm:crm_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- CRM User Management -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">CRM Users</h6>
+            </div>
+            <div class="card-body">
+                <p>Manage staff members with CRM privileges.</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="crmTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- This would be populated from Django with actual CRM users -->
+                            <tr>
+                                <td>crm_demo</td>
+                                <td>CRM</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4">
+                    <h6>Add CRM Privileges</h6>
+                    <form class="row g-3">
+                        <div class="col-md-8">
+                            <select class="form-select" id="userSelect">
+                                <option selected>Select a user</option>
+                                <option value="1">user1</option>
+                                <option value="2">user2</option>
+                                <option value="3">user3</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">Add as CRM</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CRM System Settings -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">System Settings</h6>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="autoAssignComments" class="form-label">Auto-assign Comments</label>
+                        <select class="form-select" id="autoAssignComments">
+                            <option value="0">Disabled</option>
+                            <option value="1">Round Robin</option>
+                            <option value="2">Least Assigned</option>
+                        </select>
+                        <div class="form-text">
+                            Choose how new comments are automatically assigned to CRM staff.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notificationEmails" class="form-label">Notification Emails</label>
+                        <input type="email" class="form-control" id="notificationEmails" placeholder="admin@example.com">
+                        <div class="form-text">
+                            Email address to receive notifications about urgent customer comments.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="privateNotesDefault">
+                        <label class="form-check-label" for="privateNotesDefault">
+                            Make CRM notes private by default
+                        </label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="inactivityPeriod" class="form-label">Mark as Closed After</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="inactivityPeriod" value="14">
+                            <span class="input-group-text">days of inactivity</span>
+                        </div>
+                        <div class="form-text">
+                            Comments will be automatically closed after this period of inactivity.
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

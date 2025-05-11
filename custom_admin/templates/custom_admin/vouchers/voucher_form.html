@@ -1,0 +1,368 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+    .voucher-type-selector {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .voucher-type-card {
+        flex: 1;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .voucher-type-card:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    .voucher-type-card.selected {
+        border-color: #0d6efd;
+        background-color: #f5f9fa;
+    }
+    
+    .voucher-type-card h3 {
+        margin-top: 0;
+        color: #0d6efd;
+    }
+    
+    .discount-type-toggle {
+        display: flex;
+        background: #f5f5f5;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+    }
+    
+    .discount-type-option {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .discount-type-option:first-child {
+        border-right: 1px solid #ddd;
+    }
+    
+    .discount-type-option.selected {
+        background-color: #0d6efd;
+        color: white;
+    }
+    
+    .help-text {
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    
+    .section-card {
+        border-left: 4px solid #0d6efd;
+        background-color: #f8f9fa;
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .section-title {
+        font-weight: 600;
+        color: #0d6efd;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">{{ title }}</h1>
+        <a href="{% url 'admin_dashboard:admin_vouchers' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Vouchers
+        </a>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{{ title }}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                {% if not form.instance.pk %}
+                <!-- Voucher Type Selection (only for new vouchers) -->
+                <div class="section-card">
+                    <div class="section-title">Voucher Type</div>
+                    <p class="text-muted">Choose the type of voucher you want to create.</p>
+                    
+                    <div class="voucher-type-selector">
+                        <div class="voucher-type-card" data-type="general">
+                            <h3>General Voucher</h3>
+                            <p>Available to all users</p>
+                            <p>Examples: Seasonal discounts, promotional codes</p>
+                        </div>
+                        <div class="voucher-type-card" data-type="dedicated">
+                            <h3>Dedicated Voucher</h3>
+                            <p>Assigned to specific users</p>
+                            <p>Examples: Loyalty rewards, exclusive offers</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Basic Information -->
+                <div class="section-card">
+                    <div class="section-title">Basic Information</div>
+                    <div class="row">
+                        {% if form.instance.pk %}
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.voucher_type.id_for_label }}" class="form-label">Voucher Type</label>
+                            {{ form.voucher_type }}
+                            {% if form.voucher_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.voucher_type.errors }}
+                            </div>
+                            {% endif %}
+                            {% if form.voucher_type.help_text %}
+                            <div class="help-text">{{ form.voucher_type.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <input type="hidden" name="{{ form.voucher_type.name }}" id="{{ form.voucher_type.id_for_label }}" value="general">
+                        {% endif %}
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.code.id_for_label }}" class="form-label">Voucher Code</label>
+                            {{ form.code }}
+                            {% if form.code.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.code.errors }}
+                            </div>
+                            {% endif %}
+                            {% if form.code.help_text %}
+                            <div class="help-text">{{ form.code.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Discount Settings -->
+                <div class="section-card">
+                    <div class="section-title">Discount Settings</div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Discount Type</label>
+                            <div class="discount-type-toggle">
+                                <div class="discount-type-option selected" data-type="percentage">Percentage Discount</div>
+                                <div class="discount-type-option" data-type="fixed">Fixed Amount Discount</div>
+                            </div>
+                            <input type="hidden" name="{{ form.discount_type.name }}" id="{{ form.discount_type.id_for_label }}" value="percentage">
+                            {% if form.discount_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.discount_type.errors }}
+                            </div>
+                            {% endif %}
+                            {% if form.discount_type.help_text %}
+                            <div class="help-text">{{ form.discount_type.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.discount_value.id_for_label }}" class="form-label">Discount Value</label>
+                            <div class="input-group">
+                                {{ form.discount_value }}
+                                <span class="input-group-text discount-symbol">%</span>
+                            </div>
+                            {% if form.discount_value.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.discount_value.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3 max-discount-field">
+                            <label for="{{ form.max_discount.id_for_label }}" class="form-label">Maximum Discount ($)</label>
+                            {{ form.max_discount }}
+                            {% if form.max_discount.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.max_discount.errors }}
+                            </div>
+                            {% endif %}
+                            {% if form.max_discount.help_text %}
+                            <div class="help-text">{{ form.max_discount.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Validity Period -->
+                <div class="section-card">
+                    <div class="section-title">Validity Period</div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.valid_from.id_for_label }}" class="form-label">Valid From</label>
+                            {{ form.valid_from }}
+                            {% if form.valid_from.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.valid_from.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.valid_to.id_for_label }}" class="form-label">Valid To</label>
+                            {{ form.valid_to }}
+                            {% if form.valid_to.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.valid_to.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.is_active.id_for_label }}" class="form-label">Active Status</label>
+                            <div>
+                                {{ form.is_active }}
+                                <label for="{{ form.is_active.id_for_label }}" class="form-check-label">
+                                    Is active
+                                </label>
+                            </div>
+                            {% if form.is_active.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.is_active.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Usage Settings -->
+                <div class="section-card">
+                    <div class="section-title">Usage Settings</div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.min_purchase_amount.id_for_label }}" class="form-label">Minimum Purchase Amount ($)</label>
+                            {{ form.min_purchase_amount }}
+                            {% if form.min_purchase_amount.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.min_purchase_amount.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.usage_limit.id_for_label }}" class="form-label">Usage Limit</label>
+                            {{ form.usage_limit }}
+                            {% if form.usage_limit.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.usage_limit.errors }}
+                            </div>
+                            {% endif %}
+                            <div class="help-text">Leave empty for unlimited uses</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'admin_dashboard:admin_vouchers' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Voucher
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle voucher type selection
+        const cards = document.querySelectorAll('.voucher-type-card');
+        const voucherTypeField = document.getElementById('{{ form.voucher_type.id_for_label }}');
+        
+        // Set initial selection based on current value
+        if (voucherTypeField && voucherTypeField.value) {
+            cards.forEach(card => {
+                if (card.dataset.type === voucherTypeField.value) {
+                    card.classList.add('selected');
+                }
+            });
+        } else if (cards.length > 0) {
+            // Default to general if no selection
+            cards[0].classList.add('selected');
+        }
+        
+        cards.forEach(card => {
+            card.addEventListener('click', function() {
+                // Update visual selection
+                cards.forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // Update the actual form field
+                if (voucherTypeField) {
+                    voucherTypeField.value = this.dataset.type;
+                }
+            });
+        });
+        
+        // Handle discount type selection
+        const discountTypeOptions = document.querySelectorAll('.discount-type-option');
+        const discountTypeField = document.getElementById('{{ form.discount_type.id_for_label }}');
+        const discountSymbol = document.querySelector('.discount-symbol');
+        const maxDiscountField = document.querySelector('.max-discount-field');
+        
+        // Set initial state based on current value
+        if (discountTypeField && discountTypeField.value) {
+            discountTypeOptions.forEach(option => {
+                if (option.dataset.type === discountTypeField.value) {
+                    option.classList.add('selected');
+                } else {
+                    option.classList.remove('selected');
+                }
+            });
+            
+            if (discountTypeField.value === 'fixed') {
+                discountSymbol.textContent = '$';
+                maxDiscountField.style.display = 'none';
+            } else {
+                discountSymbol.textContent = '%';
+                maxDiscountField.style.display = '';
+            }
+        }
+        
+        discountTypeOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // Update visual selection
+                discountTypeOptions.forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // Update the form field
+                if (discountTypeField) {
+                    discountTypeField.value = this.dataset.type;
+                    
+                    // Update UI based on discount type
+                    if (this.dataset.type === 'fixed') {
+                        discountSymbol.textContent = '$';
+                        maxDiscountField.style.display = 'none';
+                    } else {
+                        discountSymbol.textContent = '%';
+                        maxDiscountField.style.display = '';
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock %} 

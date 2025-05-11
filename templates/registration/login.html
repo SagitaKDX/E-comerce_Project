@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - E-Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-container {
+        max-width: 450px;
+        margin: 0 auto;
+    }
+    .card {
+        border: none;
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .card-header {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        text-align: center;
+        padding: 1.5rem;
+    }
+    .card-body {
+        padding: 2rem;
+    }
+    .form-floating label {
+        color: #666;
+    }
+    .form-control:focus {
+        border-color: #2575fc;
+        box-shadow: 0 0 0 0.25rem rgba(37, 117, 252, 0.1);
+    }
+    .social-auth-btn {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 15px;
+        border: none;
+        border-radius: 50px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .social-auth-btn i {
+        margin-right: 10px;
+        font-size: 1.2rem;
+    }
+    .google-btn {
+        background-color: #fff;
+        color: #757575;
+        border: 1px solid #ddd;
+    }
+    .google-btn:hover {
+        background-color: #f8f9fa;
+        color: #333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 20px 0;
+        color: #757575;
+    }
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #ddd;
+    }
+    .divider span {
+        padding: 0 10px;
+        font-size: 0.9rem;
+    }
+    .btn-primary {
+        background-color: #2575fc;
+        border: none;
+        padding: 12px;
+        font-weight: 500;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        background-color: #1a68e5;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .oauth-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="login-container">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-user-circle me-2"></i>Welcome Back</h3>
+                <p class="mb-0 text-white-50">Sign in to continue to E-Shop</p>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                <div class="messages mb-4">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Social Auth Buttons -->
+                <div class="mb-4">
+                    <a href="{% url 'social:begin' 'google-oauth2' %}" class="social-auth-btn google-btn" id="google-signin-btn">
+                        <svg class="oauth-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px">
+                            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                        </svg>
+                        Continue with Google
+                    </a>
+                    
+                    <!-- Mobile Device Warning -->
+                    <div id="mobile-oauth-warning" style="display: none; margin-top: 10px; font-size: 0.85rem; color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 4px;">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Google sign-in may not work properly on some mobile browsers. If you encounter issues, please use email sign-in instead.
+                    </div>
+                </div>
+                
+                <div class="divider">
+                    <span>or sign in with email</span>
+                </div>
+                
+                <form method="post" id="loginForm">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="form-floating mb-3">
+                        <input type="text" name="username" id="id_username" class="form-control {% if form.username.errors %}is-invalid{% endif %}" placeholder="Username" required>
+                        <label for="id_username">Username or Email</label>
+                        {% if form.username.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.username.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        <input type="password" name="password" id="id_password" class="form-control {% if form.password.errors %}is-invalid{% endif %}" placeholder="Password" required>
+                        <label for="id_password">Password</label>
+                        {% if form.password.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.password.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="rememberMe" name="remember_me">
+                        <label class="form-check-label" for="rememberMe">Remember me</label>
+                    </div>
+                    
+                    <div class="d-grid mb-3">
+                        <input type="hidden" name="next" value="{{ next }}">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="text-center mb-3">
+                    <p><a href="{% url 'password_reset' %}" class="text-decoration-none">
+                        <i class="fas fa-key me-1"></i>Forgot your password?
+                    </a></p>
+                </div>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <p>Don't have an account? <a href="{% url 'register' %}" class="text-decoration-none fw-bold">
+                        <i class="fas fa-user-plus me-1"></i>Register here
+                    </a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check for saved credentials when page loads
+        const savedUsername = getCookie('username');
+        const savedPassword = getCookie('password');
+        
+        if (savedUsername && savedPassword) {
+            document.getElementById('id_username').value = savedUsername;
+            document.getElementById('id_password').value = atob(savedPassword); // Decode from base64
+            document.getElementById('rememberMe').checked = true;
+        }
+        
+        // Handle form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const rememberMe = document.getElementById('rememberMe').checked;
+            const username = document.getElementById('id_username').value;
+            const password = document.getElementById('id_password').value;
+            
+            if (rememberMe) {
+                // Save credentials in cookies that expire in 30 days
+                setCookie('username', username, 30);
+                setCookie('password', btoa(password), 30); // Encode to base64
+            } else {
+                // Delete cookies if "Remember me" is unchecked
+                eraseCookie('username');
+                eraseCookie('password');
+            }
+        });
+        
+        // Cookie functions
+        function setCookie(name, value, days) {
+            let expires = '';
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = '; expires=' + date.toUTCString();
+            }
+            document.cookie = name + '=' + value + expires + '; path=/; SameSite=Strict; Secure';
+        }
+        
+        function getCookie(name) {
+            const nameEQ = name + '=';
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+        
+        function eraseCookie(name) {
+            document.cookie = name + '=; Max-Age=-1; path=/; SameSite=Strict; Secure';
+        }
+    });
+
+    // Detect mobile browsers
+    (function() {
+        var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+            document.getElementById('mobile-oauth-warning').style.display = 'block';
+            
+            // Add click handler to Google sign-in button for mobile devices
+            document.getElementById('google-signin-btn').addEventListener('click', function(e) {
+                if (confirm('Google sign-in may not work properly on mobile browsers due to security restrictions.\n\nDo you want to:\n• Continue anyway (might not work)\n• Use email sign-in instead?')) {
+                    // User chose to continue, do nothing
+                } else {
+                    // User chose not to continue
+                    e.preventDefault();
+                    document.getElementById('id_username').focus();
+                }
+            });
+        }
+    })();
+</script>
+{% endblock %}

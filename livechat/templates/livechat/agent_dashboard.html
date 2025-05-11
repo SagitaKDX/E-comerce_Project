@@ -1,0 +1,557 @@
+{% extends 'custom_admin/crm/base.html' %}
+{% load static %}
+
+{% block title %}Live Chat Support Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-card {
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .chat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .waiting-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+    
+    .chat-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .dashboard-stats {
+        border-radius: 10px;
+    }
+    
+    .stats-icon {
+        font-size: 1.8rem;
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+    }
+    
+    .auto-refresh {
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Live Chat Support Dashboard</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'crm:crm_dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Live Chat Support</li>
+    </ol>
+    
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-stats bg-primary text-white mb-4">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stats-icon bg-primary-light text-primary me-3">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <div>
+                        <div class="small">Waiting Chats</div>
+                        <div class="h3 mb-0" id="waiting-count">{{ waiting_chats.count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-stats bg-success text-white mb-4">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stats-icon bg-success-light text-success me-3">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div>
+                        <div class="small">Your Active Chats</div>
+                        <div class="h3 mb-0" id="assigned-count">{{ assigned_chats.count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6 col-md-12">
+            <div class="card mb-4">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">Live Support Dashboard</h5>
+                        <p class="text-muted mb-0 small">Manage customer chat requests in real-time</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'livechat:quick_responses' %}" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-comment-dots me-1"></i> Quick Responses
+                        </a>
+                        <a href="{% url 'livechat:chat_analytics' %}" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-chart-bar me-1"></i> Analytics
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="refresh-button">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="card-footer text-muted text-end">
+                    <small class="auto-refresh">Auto-refresh in <span id="refresh-countdown">30</span>s</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-hourglass-half me-1"></i>
+                    Waiting Chat Requests
+                </div>
+                <div class="card-body">
+                    <div id="waiting-chats-container">
+                        {% if waiting_chats %}
+                            {% for chat in waiting_chats %}
+                                <div class="card chat-card mb-3" onclick="assignChatToMe('{{ chat.id }}')">
+                                    <div class="card-body position-relative">
+                                        <span class="badge bg-warning waiting-badge">Waiting</span>
+                                        <h5 class="card-title">{{ chat.subject }}</h5>
+                                        <h6 class="card-subtitle mb-2 text-muted">
+                                            {% if chat.user.get_full_name %}
+                                                {{ chat.user.get_full_name }}
+                                            {% else %}
+                                                {{ chat.user.username }}
+                                            {% endif %}
+                                        </h6>
+                                        <p class="chat-time mb-2">
+                                            Started: {{ chat.started_at|date:"M d, Y H:i" }}
+                                        </p>
+                                        <button class="btn btn-sm btn-primary mt-2">
+                                            <i class="fas fa-headset"></i> Accept Chat
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-info-circle me-2"></i> No waiting chat requests at the moment.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-comments me-1"></i>
+                    Your Active Chats
+                </div>
+                <div class="card-body">
+                    <div id="assigned-chats-container">
+                        {% if assigned_chats %}
+                            {% for chat in assigned_chats %}
+                                <div class="card chat-card mb-3">
+                                    <div class="card-body position-relative">
+                                        <span class="badge bg-success waiting-badge">Active</span>
+                                        <h5 class="card-title">{{ chat.subject }}</h5>
+                                        <h6 class="card-subtitle mb-2 text-muted">
+                                            {% if chat.user.get_full_name %}
+                                                {{ chat.user.get_full_name }}
+                                            {% else %}
+                                                {{ chat.user.username }}
+                                            {% endif %}
+                                        </h6>
+                                        <p class="chat-time mb-2">
+                                            Started: {{ chat.started_at|date:"M d, Y H:i" }}
+                                        </p>
+                                        <a href="{% url 'livechat:chat_room' chat_id=chat.id %}" class="btn btn-sm btn-success mt-2">
+                                            <i class="fas fa-comment"></i> Join Chat
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-info-circle me-2"></i> You don't have any active chats.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh countdown
+    let countdown = 15;
+    const refreshButton = document.getElementById('refresh-button');
+    
+    function updateCountdown() {
+        countdown--;
+        
+        // Check if countdown element exists before updating it
+        const countdownElement = document.getElementById('refresh-countdown');
+        if (countdownElement) {
+            countdownElement.textContent = countdown;
+        }
+        
+        if (countdown <= 0) {
+            refreshDashboard();
+            countdown = 15;
+        }
+    }
+    
+    // Set interval for countdown
+    setInterval(updateCountdown, 1000);
+    
+    // Manual refresh button
+    refreshButton.addEventListener('click', function() {
+        refreshDashboard();
+        countdown = 15;
+        const countdownElement = document.getElementById('refresh-countdown');
+        if (countdownElement) {
+            countdownElement.textContent = countdown;
+        }
+    });
+    
+    // Function to refresh dashboard data
+    function refreshDashboard() {
+        // First try to refresh via AJAX without full page reload
+        fetch('/livechat/api/waiting-chats/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update waiting chats count
+                const waitingCountElement = document.getElementById('waiting-count');
+                if (waitingCountElement) {
+                    waitingCountElement.textContent = data.waiting_count;
+                }
+                
+                // Update waiting chats container if empty
+                if (data.waiting_count > 0) {
+                    const waitingChatsContainer = document.getElementById('waiting-chats-container');
+                    const noChatsMessage = waitingChatsContainer?.querySelector('.alert-info');
+                    
+                    // If container is empty (showing no chats message), reload the page
+                    if (noChatsMessage) {
+                        location.reload();
+                    }
+                }
+                
+                console.log('[AGENT DEBUG] Dashboard refreshed via AJAX');
+            } else {
+                // Fall back to full page reload
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('[AGENT DEBUG] Error refreshing dashboard:', error);
+            // Fall back to full page reload
+            location.reload();
+        });
+    }
+    
+    // Function to assign a chat to the current agent
+    function assignChatToMe(chatId) {
+        if (confirm('Are you sure you want to accept this chat request?')) {
+            fetch('{% url "livechat:assign_chat" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    'chat_id': chatId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log("Chat assigned successfully, redirecting to chat room");
+                    // Redirect to the chat room with the CRM view
+                    window.location.href = '{% url "livechat:chat_room" chat_id="PLACEHOLDER" %}'.replace('PLACEHOLDER', chatId);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while assigning the chat.');
+            });
+        }
+    }
+    
+    // WebSocket for agent notifications
+    function connectToNotificationSocket() {
+        // Try multiple WebSocket configurations
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const wsHost = window.location.hostname;
+        const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+        
+        // Determine which port to try (use a counter to track attempts)
+        if (!window.wsPortAttempt) {
+            window.wsPortAttempt = 0;
+        }
+        
+        // List of ports to try
+        const portOptions = [
+            '8001',       // First try port 8001 (Daphne ASGI server)
+            '9000',       // Then try port 9000 (alternative Daphne port)
+            currentPort,  // Then try same port as the webpage
+            '8000'        // Then try port 8000 (Django dev server)
+        ];
+        
+        // Get the current port to try
+        const portIndex = window.wsPortAttempt % portOptions.length;
+        const currentWSPort = portOptions[portIndex];
+        window.wsPortAttempt++;
+        
+        // Build the WebSocket URL
+        const wsUrl = `${wsProtocol}${wsHost}:${currentWSPort}/ws/agent/notifications/`;
+        
+        console.log(`[AGENT DEBUG] Attempt #${window.wsPortAttempt}: Connecting to WebSocket at: ${wsUrl}`);
+        
+        // Create WebSocket with error handling
+        let socket;
+        try {
+            socket = new WebSocket(wsUrl);
+            
+            socket.onopen = function() {
+                console.log('[AGENT DEBUG] WebSocket connection established successfully');
+            };
+            
+            socket.onmessage = function(e) {
+                console.log('[AGENT DEBUG] Message received from server:', e.data);
+                
+                try {
+                    const data = JSON.parse(e.data);
+                    console.log('[AGENT DEBUG] Parsed message:', data);
+                    
+                    if (data.type === 'user_waiting') {
+                        console.log('[AGENT DEBUG] New chat request received:', data);
+                        handleNewChatRequest(data);
+                    } else if (data.type === 'connection_established') {
+                        console.log('[AGENT DEBUG] Connection established message:', data.message);
+                    }
+                } catch (error) {
+                    console.error('[AGENT DEBUG] Error parsing message:', error);
+                }
+            };
+            
+            socket.onclose = function(e) {
+                console.log('[AGENT DEBUG] WebSocket connection closed. Code:', e.code, 'Reason:', e.reason);
+                
+                // If we've tried all ports less than 4 times, try the next one immediately
+                // Otherwise, wait a bit before trying again
+                if (window.wsPortAttempt < portOptions.length * 3) {
+                    console.log(`[AGENT DEBUG] Trying next port option (${portOptions[window.wsPortAttempt % portOptions.length]})...`);
+                    setTimeout(connectToNotificationSocket, 500);
+                } else {
+                    // Wait longer between retries after we've tried all ports multiple times
+                    console.log('[AGENT DEBUG] Waiting before reconnecting...');
+                    setTimeout(connectToNotificationSocket, 5000);
+                }
+            };
+            
+            socket.onerror = function(e) {
+                console.error('[AGENT DEBUG] WebSocket error:', e);
+                console.log('[AGENT DEBUG] Error details:', e);
+            };
+            
+            return socket;
+        } catch (err) {
+            console.error('[AGENT DEBUG] Error creating WebSocket:', err);
+            
+            // Try again after a delay
+            setTimeout(connectToNotificationSocket, 5000);
+            return null;
+        }
+    }
+    
+    function handleNewChatRequest(data) {
+        console.log('[AGENT DEBUG] Processing new chat request:', data);
+        
+        try {
+            const chatId = data.chat_id;
+            if (!chatId) {
+                console.error('[AGENT DEBUG] No chat ID in notification');
+                return;
+            }
+            
+            // Update waiting chats count
+            const waitingCountElement = document.getElementById('waiting-count');
+            if (waitingCountElement) {
+                const currentCount = parseInt(waitingCountElement.textContent) || 0;
+                waitingCountElement.textContent = currentCount + 1;
+                console.log('[AGENT DEBUG] Updated waiting count to:', currentCount + 1);
+            }
+            
+            // Add new chat card to the waiting chats container
+            const waitingChatsContainer = document.getElementById('waiting-chats-container');
+            if (waitingChatsContainer) {
+                console.log('[AGENT DEBUG] Found waiting chats container');
+                
+                // Remove "no chats" message if it exists
+                const noChatsMessage = waitingChatsContainer.querySelector('.alert-info');
+                if (noChatsMessage) {
+                    console.log('[AGENT DEBUG] Removing no chats message');
+                    noChatsMessage.remove();
+                }
+                
+                // Create and add new chat card
+                const chatCard = document.createElement('div');
+                chatCard.className = 'card chat-card mb-3';
+                chatCard.setAttribute('data-chat-id', chatId);
+                chatCard.onclick = function() { assignChatToMe(chatId); };
+                
+                // Format timestamp for display
+                const timestamp = new Date(data.timestamp);
+                const formattedTime = timestamp.toLocaleString();
+                
+                console.log('[AGENT DEBUG] Creating chat card for ID:', chatId);
+                
+                // Get chat info from server to add more details to the card
+                fetch(`/livechat/api/chat-info/${chatId}/`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(chatInfo => {
+                    // Create card with detailed info
+                    chatCard.innerHTML = `
+                        <div class="card-body position-relative">
+                            <span class="badge bg-danger waiting-badge">New!</span>
+                            <h5 class="card-title">${chatInfo.subject || 'New Chat Request'}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                ${chatInfo.user_name || chatInfo.user_email || 'Anonymous User'}
+                            </h6>
+                            <p class="chat-time mb-2">
+                                Started: ${formattedTime}
+                            </p>
+                            <button class="btn btn-sm btn-primary mt-2">
+                                <i class="fas fa-headset"></i> Accept Chat
+                            </button>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    // Fallback to basic info if API call fails
+                    console.error('[AGENT DEBUG] Error fetching chat details:', error);
+                    chatCard.innerHTML = `
+                        <div class="card-body position-relative">
+                            <span class="badge bg-danger waiting-badge">New!</span>
+                            <h5 class="card-title">New Chat Request</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                Anonymous User
+                            </h6>
+                            <p class="chat-time mb-2">
+                                Started: ${formattedTime}
+                            </p>
+                            <button class="btn btn-sm btn-primary mt-2">
+                                <i class="fas fa-headset"></i> Accept Chat
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                // Insert at the top of the container
+                waitingChatsContainer.insertBefore(chatCard, waitingChatsContainer.firstChild);
+                console.log('[AGENT DEBUG] Added chat card to container');
+                
+                // Flash the card with animation
+                setTimeout(() => {
+                    chatCard.style.transition = 'all 0.5s ease';
+                    chatCard.style.boxShadow = '0 0 15px rgba(220, 53, 69, 0.7)';
+                    chatCard.style.backgroundColor = '#fff3cd';
+                    
+                    // Flash the card a few times
+                    let flashCount = 0;
+                    const flashInterval = setInterval(() => {
+                        chatCard.style.backgroundColor = flashCount % 2 === 0 ? '#fff' : '#fff3cd';
+                        flashCount++;
+                        if (flashCount > 5) {
+                            clearInterval(flashInterval);
+                            chatCard.style.backgroundColor = '';
+                            setTimeout(() => {
+                                chatCard.style.boxShadow = '';
+                            }, 2000);
+                        }
+                    }, 500);
+                }, 100);
+                
+                // Show browser notification (silent)
+                showDesktopNotification('New Chat Request', `New customer is waiting for assistance`);
+            } else {
+                console.error('[AGENT DEBUG] Waiting chats container not found');
+            }
+        } catch (error) {
+            console.error('[AGENT DEBUG] Error handling new chat request:', error);
+        }
+    }
+    
+    // Function to show desktop notification (visual only, no sound)
+    function showDesktopNotification(title, message) {
+        // Show browser notification if supported and page is not visible
+        if (!document.hasFocus() && 'Notification' in window) {
+            if (Notification.permission === 'granted') {
+                new Notification(title, {
+                    body: message,
+                    icon: '{% static "livechat/img/chat-icon.png" %}',
+                    silent: true // Ensure notification is silent
+                });
+            } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        new Notification(title, {
+                            body: message,
+                            icon: '{% static "livechat/img/chat-icon.png" %}',
+                            silent: true // Ensure notification is silent
+                        });
+                    }
+                });
+            }
+        }
+    }
+    
+    // Initialize WebSocket connection immediately
+    const agentSocket = connectToNotificationSocket();
+    
+    // Request notification permission
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        Notification.requestPermission();
+    }
+    
+    // Force reconnect after a short delay to ensure connection is established
+    setTimeout(function() {
+        if (!agentSocket || agentSocket.readyState !== WebSocket.OPEN) {
+            console.log('[AGENT DEBUG] WebSocket not connected, attempting to reconnect...');
+            connectToNotificationSocket();
+        }
+    }, 2000);
+    
+    // Set up auto-refresh fallback - will reload the page if no WebSocket notifications are received
+    setInterval(function() {
+        refreshDashboard();
+    }, 60000); // Reload every 60 seconds as a fallback
+</script>
+{% endblock %} 

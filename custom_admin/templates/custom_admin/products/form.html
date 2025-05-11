@@ -1,0 +1,148 @@
+{% extends 'custom_admin/base.html' %}
+
+{% block title %}{{ title }} - E-Shop Admin{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'admin_dashboard:admin_products' %}" class="btn btn-sm btn-secondary">
+    <i class="fas fa-arrow-left me-1"></i> Back to Products
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">Product Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.name.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
+                    {{ form.category }}
+                    {% if form.category.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.category.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="{{ form.price.id_for_label }}" class="form-label">Price ($)</label>
+                    {{ form.price }}
+                    {% if form.price.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.price.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label for="{{ form.stock.id_for_label }}" class="form-label">Stock</label>
+                    {{ form.stock }}
+                    {% if form.stock.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.stock.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.description.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ form.image.id_for_label }}" class="form-label">Product Image</label>
+                {{ form.image }}
+                {% if form.image.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.image.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if not is_add and product.image %}
+                    <div class="mt-2">
+                        <p>Current image:</p>
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-thumbnail" style="max-height: 200px;">
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3 form-check">
+                {{ form.is_active }}
+                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                    Active
+                </label>
+                {% if form.is_active.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.is_active.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3 form-check">
+                {{ form.is_featured }}
+                <label class="form-check-label" for="{{ form.is_featured.id_for_label }}">
+                    Featured (shown on homepage)
+                </label>
+                {% if form.is_featured.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.is_featured.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    {% if is_add %}
+                        <i class="fas fa-plus me-1"></i> Add Product
+                    {% else %}
+                        <i class="fas fa-save me-1"></i> Update Product
+                    {% endif %}
+                </button>
+                <a href="{% url 'admin_dashboard:admin_products' %}" class="btn btn-secondary ms-2">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

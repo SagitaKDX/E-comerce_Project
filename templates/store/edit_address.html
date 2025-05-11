@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Address - E-Shop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Edit Address</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Address Name</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ address.name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="address_line1" class="form-label">Address Line 1</label>
+                            <input type="text" class="form-control" id="address_line1" name="address_line1" value="{{ address.address_line1 }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="address_line2" class="form-label">Address Line 2 (Optional)</label>
+                            <input type="text" class="form-control" id="address_line2" name="address_line2" value="{{ address.address_line2 }}">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="city" class="form-label">City</label>
+                                <input type="text" class="form-control" id="city" name="city" value="{{ address.city }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="state" class="form-label">State/Province</label>
+                                <input type="text" class="form-control" id="state" name="state" value="{{ address.state }}" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="postal_code" class="form-label">Postal Code</label>
+                                <input type="text" class="form-control" id="postal_code" name="postal_code" value="{{ address.postal_code }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="country" class="form-label">Country</label>
+                                <input type="text" class="form-control" id="country" name="country" value="{{ address.country }}" required>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'profile' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Profile
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

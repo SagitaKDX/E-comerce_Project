@@ -1,0 +1,82 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Delete Voucher</h1>
+        <a href="{% url 'admin_dashboard:admin_vouchers' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Vouchers
+        </a>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Confirm Deletion</h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <h5><i class="fas fa-exclamation-triangle"></i> Warning!</h5>
+                <p>You are about to delete the voucher <strong>{{ voucher.code }}</strong>. This action cannot be undone.</p>
+                
+                {% if voucher.used_count > 0 %}
+                <p class="mt-3"><strong>Note:</strong> This voucher has been used {{ voucher.used_count }} times. Deleting it may affect orders that have used this voucher.</p>
+                {% endif %}
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    Voucher Details
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Code:</strong> {{ voucher.code }}</p>
+                            <p><strong>Type:</strong> 
+                                {% if voucher.voucher_type == 'general' %}
+                                <span class="badge bg-info">General</span>
+                                {% else %}
+                                <span class="badge bg-warning">Dedicated</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Discount:</strong> 
+                                {% if voucher.discount_type == 'percentage' %}
+                                {{ voucher.discount_value }}%
+                                {% if voucher.max_discount %}
+                                (Max: ${{ voucher.max_discount }})
+                                {% endif %}
+                                {% else %}
+                                ${{ voucher.discount_value }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Valid From:</strong> {{ voucher.valid_from|date:"M d, Y" }}</p>
+                            <p><strong>Valid To:</strong> {{ voucher.valid_to|date:"M d, Y" }}</p>
+                            <p><strong>Status:</strong>
+                                {% if voucher.is_valid %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'admin_dashboard:admin_vouchers' %}" class="btn btn-secondary">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Delete Voucher
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

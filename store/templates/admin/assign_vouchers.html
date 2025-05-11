@@ -1,0 +1,122 @@
+{% extends "admin/base_site.html" %}
+{% load static i18n %}
+
+{% block extrahead %}
+<style>
+    .voucher-list, .user-list {
+        margin-bottom: 20px;
+    }
+    .voucher-card {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-left: 4px solid #198754;
+    }
+    .voucher-code {
+        font-weight: bold;
+        font-size: 18px;
+    }
+    .voucher-details {
+        font-size: 14px;
+        color: #6c757d;
+    }
+    .user-selection {
+        max-height: 500px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 15px;
+    }
+    .user-item {
+        padding: 8px;
+        margin-bottom: 5px;
+        border-radius: 3px;
+    }
+    .user-item:hover {
+        background-color: #f8f9fa;
+    }
+    .user-has-voucher {
+        color: #6c757d;
+        font-style: italic;
+    }
+    .select-actions {
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>{{ title }}</h1>
+    
+    <div class="module">
+        <div class="voucher-list">
+            <h2>Selected Vouchers</h2>
+            {% for voucher in vouchers %}
+            <div class="voucher-card">
+                <div class="voucher-code">{{ voucher.code }}</div>
+                <div class="voucher-details">
+                    <div>Type: {{ voucher.get_discount_type_display }}</div>
+                    <div>
+                        Value: 
+                        {% if voucher.discount_type == 'percentage' %}
+                            {{ voucher.discount_value }}%
+                            {% if voucher.max_discount %} (max ${{ voucher.max_discount }}){% endif %}
+                        {% else %}
+                            ${{ voucher.discount_value }}
+                        {% endif %}
+                    </div>
+                    <div>Expires: {{ voucher.valid_to|date:"M d, Y H:i" }}</div>
+                    <div>Minimum purchase: ${{ voucher.min_purchase_amount }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <h2>Select Users</h2>
+            <div class="select-actions">
+                <button type="button" id="select-all" class="button">Select All</button>
+                <button type="button" id="deselect-all" class="button">Deselect All</button>
+            </div>
+            
+            <div class="user-selection">
+                {% for user in users %}
+                <div class="user-item {% if user.has_some_vouchers %}user-has-voucher{% endif %}">
+                    <label>
+                        <input type="checkbox" name="user_ids" value="{{ user.id }}" class="user-checkbox">
+                        {{ user.username }} ({{ user.email }})
+                        {% if user.has_some_vouchers %} - already has some of these vouchers{% endif %}
+                    </label>
+                </div>
+                {% empty %}
+                <p>No users available</p>
+                {% endfor %}
+            </div>
+            
+            <div class="submit-row">
+                <input type="submit" class="default" value="Assign Vouchers">
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAllBtn = document.getElementById('select-all');
+        const deselectAllBtn = document.getElementById('deselect-all');
+        const checkboxes = document.querySelectorAll('.user-checkbox');
+        
+        selectAllBtn.addEventListener('click', function() {
+            checkboxes.forEach(checkbox => checkbox.checked = true);
+        });
+        
+        deselectAllBtn.addEventListener('click', function() {
+            checkboxes.forEach(checkbox => checkbox.checked = false);
+        });
+    });
+</script>
+{% endblock %} 

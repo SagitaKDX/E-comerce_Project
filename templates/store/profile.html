@@ -1,0 +1,841 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - E-Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-container {
+        padding: 2rem 0;
+    }
+    .profile-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #f1f1f1;
+    }
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        background-color: #dc3545;
+        color: white;
+        font-size: 2rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1.5rem;
+    }
+    .profile-info h1 {
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .profile-info p {
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+    .profile-tabs {
+        margin-bottom: 2rem;
+    }
+    .nav-tabs {
+        border-bottom: 1px solid #f1f1f1;
+    }
+    .nav-tabs .nav-link {
+        color: #6c757d;
+        font-weight: 600;
+        border: none;
+        padding: 1rem 1.5rem;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s ease;
+    }
+    .nav-tabs .nav-link:hover {
+        color: #dc3545;
+        border-bottom-color: #f1f1f1;
+    }
+    .nav-tabs .nav-link.active {
+        color: #dc3545;
+        border-bottom-color: #dc3545;
+        background-color: transparent;
+    }
+    .tab-content {
+        padding-top: 2rem;
+    }
+    .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #f1f1f1;
+        padding: 1.2rem 1.5rem;
+        border-radius: 10px 10px 0 0 !important;
+    }
+    .card-title {
+        font-weight: 600;
+        margin-bottom: 0;
+    }
+    .card-body {
+        padding: 1.5rem;
+    }
+    .order-card {
+        margin-bottom: 1.5rem;
+    }
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .order-id {
+        font-weight: 600;
+        color: #212529;
+    }
+    .order-date {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .order-status {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .status-pending {
+        background-color: #ffeeba;
+        color: #856404;
+    }
+    .status-processing {
+        background-color: #bee5eb;
+        color: #0c5460;
+    }
+    .status-shipped {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-delivered {
+        background-color: #c3e6cb;
+        color: #155724;
+    }
+    .status-cancelled {
+        background-color: #f5c6cb;
+        color: #721c24;
+    }
+    .order-product {
+        display: flex;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f1f1f1;
+    }
+    .order-product:last-child {
+        border-bottom: none;
+    }
+    .order-product-img {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin-right: 1rem;
+    }
+    .order-product-name {
+        font-weight: 600;
+        color: #212529;
+        text-decoration: none;
+        margin-bottom: 0.3rem;
+        transition: color 0.2s ease;
+    }
+    .order-product-name:hover {
+        color: #dc3545;
+    }
+    .order-product-price {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .order-product-quantity {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .order-total {
+        display: flex;
+        justify-content: space-between;
+        padding-top: 1rem;
+        border-top: 1px solid #f1f1f1;
+        margin-top: 1rem;
+    }
+    .total-label {
+        font-weight: 600;
+        color: #212529;
+    }
+    .total-value {
+        font-weight: 700;
+        color: #dc3545;
+    }
+    .order-package {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    .order-package-price {
+        font-weight: 700;
+        color: #28a745;
+    }
+    .package-item {
+        border-bottom: 1px dashed #e9ecef;
+    }
+    .package-item:last-child {
+        border-bottom: none;
+    }
+    .package-item-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #007bff;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    .package-item-name {
+        font-size: 0.9rem;
+    }
+    .package-item-quantity {
+        font-size: 0.8rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    .order-details-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .order-details-section h6 {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    .order-details-section p {
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+    }
+    .order-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    .btn-view-details {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        color: #495057;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    .btn-view-details:hover {
+        background-color: #e9ecef;
+        color: #212529;
+    }
+    .btn-view-bill {
+        background-color: #dc3545;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    .btn-view-bill:hover {
+        background-color: #c82333;
+        color: white;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+    }
+    .empty-icon {
+        font-size: 3rem;
+        color: #dee2e6;
+        margin-bottom: 1rem;
+    }
+    .empty-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .empty-description {
+        color: #6c757d;
+        margin-bottom: 1.5rem;
+    }
+    .btn-add {
+        background-color: #dc3545;
+        color: white;
+        border-radius: 50px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .btn-add:hover {
+        background-color: #c82333;
+        transform: translateY(-2px);
+    }
+    .address-card {
+        transition: all 0.3s ease;
+        border: 1px solid #e9ecef;
+    }
+    .address-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .address-name {
+        font-weight: 600;
+        color: #212529;
+        font-size: 1.1rem;
+    }
+    .address-line {
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+    .address-actions {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        font-weight: 500;
+        text-decoration: none;
+        color: #495057;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        transition: all 0.2s ease;
+    }
+    .action-btn:hover {
+        background-color: #e9ecef;
+        color: #212529;
+        text-decoration: none;
+    }
+    .action-btn-danger {
+        color: #dc3545;
+        border-color: #dc3545;
+    }
+    .action-btn-danger:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+    .badge {
+        padding: 0.5rem 0.8rem;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            {{ user.username.0|upper }}
+        </div>
+        <div class="profile-info">
+            <h1>{{ user.get_full_name|default:user.username }}</h1>
+            <p>{{ user.email }}</p>
+        </div>
+    </div>
+    
+    <div class="profile-tabs">
+        <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab" aria-controls="orders" aria-selected="true">
+                    <i class="fas fa-shopping-bag me-2"></i>My Orders
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="addresses-tab" data-bs-toggle="tab" data-bs-target="#addresses" type="button" role="tab" aria-controls="addresses" aria-selected="false">
+                    <i class="fas fa-map-marker-alt me-2"></i>Addresses
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="vouchers-tab" data-bs-toggle="tab" data-bs-target="#vouchers" type="button" role="tab" aria-controls="vouchers" aria-selected="false">
+                    <i class="fas fa-tag me-2"></i>Vouchers
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab" aria-controls="reviews" aria-selected="false">
+                    <i class="fas fa-star me-2"></i>Reviews
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" aria-controls="settings" aria-selected="false">
+                    <i class="fas fa-cog me-2"></i>Settings
+                </button>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="tab-content" id="profileTabsContent">
+        <!-- Orders Tab -->
+        <div class="tab-pane fade show active" id="orders" role="tabpanel" aria-labelledby="orders-tab">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">My Orders</h2>
+                <div class="d-flex gap-2">
+                    <select class="form-select" onchange="window.location.href='?sort=' + this.value">
+                        <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Newest First</option>
+                        <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Oldest First</option>
+                        <option value="id" {% if sort_by == 'id' %}selected{% endif %}>Order ID: Low to High</option>
+                        <option value="-id" {% if sort_by == '-id' %}selected{% endif %}>Order ID: High to Low</option>
+                    </select>
+                </div>
+            </div>
+            
+            {% if page_obj %}
+                {% for order in page_obj %}
+                    <div class="card order-card">
+                        <div class="card-header">
+                            <div class="order-header">
+                                <div>
+                                    <span class="order-id">Order ID: {{ order.id }}</span>
+                                    <span class="order-date">{{ order.created_at|date:"F j, Y" }}</span>
+                                </div>
+                                {% if order.status == 'pending' %}
+                                    <span class="order-status status-pending">Pending</span>
+                                {% elif order.status == 'processing' %}
+                                    <span class="order-status status-processing">Processing</span>
+                                {% elif order.status == 'shipped' %}
+                                    <span class="order-status status-shipped">Shipped</span>
+                                {% elif order.status == 'delivered' %}
+                                    <span class="order-status status-delivered">Delivered</span>
+                                {% elif order.status == 'cancelled' %}
+                                    <span class="order-status status-cancelled">Cancelled</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% with first_item=order.items.first %}
+                                {% if first_item %}
+                                    <div class="order-product">
+                                        {% if first_item.product.image %}
+                                            <img src="{{ first_item.product.image.url }}" alt="{{ first_item.product.name }}" class="order-product-img">
+                                        {% else %}
+                                            <img src="https://via.placeholder.com/50x50?text=No+Image" alt="{{ first_item.product.name }}" class="order-product-img">
+                                        {% endif %}
+                                        <div class="flex-grow-1">
+                                            <a href="{% url 'product_detail' first_item.product.slug %}" class="order-product-name">
+                                                {{ first_item.product.name }}
+                                            </a>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="order-product-price">${{ first_item.price }}</span>
+                                                <span class="order-product-quantity">Qty: {{ first_item.quantity }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% if order.items.count > 1 %}
+                                        <div class="text-center mt-2">
+                                            <small class="text-muted">+ {{ order.items.count|add:"-1" }} more items</small>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            {% endwith %}
+                            
+                            <div class="order-actions mt-3">
+                                <button class="btn btn-view-details" type="button" data-bs-toggle="collapse" data-bs-target="#orderDetails{{ order.id }}" aria-expanded="false">
+                                    <i class="fas fa-chevron-down me-2"></i>View Order Details
+                                </button>
+                                <a href="{% url 'order_bill' order.id %}" class="btn btn-view-bill">
+                                    <i class="fas fa-file-invoice me-2"></i>View Bill
+                                </a>
+                                {% if order.status == 'pending' %}
+                                    <form method="post" action="{% url 'cancel_order' order.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to cancel this order?')">
+                                            <i class="fas fa-times me-2"></i>Cancel Order
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="collapse" id="orderDetails{{ order.id }}">
+                                <div class="order-details-section">
+                                    <h6>Shipping Address</h6>
+                                    <p>{{ order.shipping_address.name }}</p>
+                                    <p>{{ order.shipping_address.address_line1 }}</p>
+                                    {% if order.shipping_address.address_line2 %}
+                                        <p>{{ order.shipping_address.address_line2 }}</p>
+                                    {% endif %}
+                                    <p>{{ order.shipping_address.city }}, {{ order.shipping_address.state }} {{ order.shipping_address.postal_code }}</p>
+                                    <p>{{ order.shipping_address.country }}</p>
+                                </div>
+                                
+                                <div class="order-details-section">
+                                    <h6>Payment Information</h6>
+                                    <p><strong>Method:</strong> {{ order.payment_method }}</p>
+                                    <p>
+                                        <strong>Status:</strong>
+                                        {% if order.payment_status %}
+                                            <span class="badge bg-success">Paid</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                
+                                <div class="order-details-section">
+                                    <h6>Order Items</h6>
+                                    {% for item in order.items.all %}
+                                        <div class="order-product">
+                                            {% if item.product.image %}
+                                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="order-product-img">
+                                            {% else %}
+                                                <img src="https://via.placeholder.com/50x50?text=No+Image" alt="{{ item.product.name }}" class="order-product-img">
+                                            {% endif %}
+                                            <div class="flex-grow-1">
+                                                <a href="{% url 'product_detail' item.product.slug %}" class="order-product-name">
+                                                    {{ item.product.name }}
+                                                </a>
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="order-product-price">${{ item.price }}</span>
+                                                    <span class="order-product-quantity">Qty: {{ item.quantity }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                    
+                                    {% if order.packages.exists %}
+                                    <h6 class="mt-4">Packages</h6>
+                                    {% for package in order.packages.all %}
+                                        <div class="order-package mt-2 mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="mb-0 text-primary">{{ package.package.name }}</h6>
+                                                <span class="order-package-price">${{ package.price }}</span>
+                                            </div>
+                                            <div class="package-items">
+                                                {% for item in package.items.all %}
+                                                    <div class="package-item d-flex align-items-center justify-content-between py-1">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="package-item-dot"></div>
+                                                            <span class="package-item-name">{{ item.product.name }}</span>
+                                                        </div>
+                                                        <span class="package-item-quantity">x{{ item.quantity }}</span>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                    {% endif %}
+                                    
+                                    <div class="order-total">
+                                        <span class="total-label">Total</span>
+                                        <span class="total-value">${{ order.total_price }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&sort={{ sort_by }}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}&sort={{ sort_by }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&sort={{ sort_by }}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-shopping-bag"></i>
+                    </div>
+                    <h3 class="empty-title">No Orders Yet</h3>
+                    <p class="empty-description">You haven't placed any orders yet. Start shopping to see your orders here.</p>
+                    <a href="{% url 'product_list' %}" class="btn btn-add">
+                        <i class="fas fa-store me-2"></i>Start Shopping
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Addresses Tab -->
+        <div class="tab-pane fade" id="addresses" role="tabpanel" aria-labelledby="addresses-tab">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">My Addresses</h2>
+                <a href="{% url 'add_address' %}" class="btn btn-add">
+                    <i class="fas fa-plus me-2"></i>Add New Address
+                </a>
+            </div>
+            
+            {% if addresses %}
+                <div class="row g-4">
+                    {% for address in addresses %}
+                        <div class="col-md-6">
+                            <div class="card address-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h5 class="address-name mb-0">{{ address.name }}</h5>
+                                        {% if address.is_default %}
+                                            <span class="badge bg-success">Default</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="address-details">
+                                        <p class="address-line mb-1">{{ address.address_line1 }}</p>
+                                        {% if address.address_line2 %}
+                                            <p class="address-line mb-1">{{ address.address_line2 }}</p>
+                                        {% endif %}
+                                        <p class="address-line mb-1">{{ address.city }}, {{ address.state }} {{ address.postal_code }}</p>
+                                        <p class="address-line mb-0">{{ address.country }}</p>
+                                    </div>
+                                    
+                                    <div class="address-actions">
+                                        <a href="{% url 'edit_address' address.id %}" class="action-btn">
+                                            <i class="fas fa-edit me-1"></i>Edit
+                                        </a>
+                                        <a href="{% url 'delete_address' address.id %}" class="action-btn action-btn-danger">
+                                            <i class="fas fa-trash-alt me-1"></i>Delete
+                                        </a>
+                                        {% if not address.is_default %}
+                                            <form method="post" action="{% url 'set_default_address' address.id %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="action-btn">
+                                                    <i class="fas fa-check me-1"></i>Set as Default
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <h3 class="empty-title">No Addresses Saved</h3>
+                    <p class="empty-description">You haven't saved any shipping addresses yet. Add an address for faster checkout.</p>
+                    <a href="{% url 'add_address' %}" class="btn btn-add">
+                        <i class="fas fa-plus me-2"></i>Add New Address
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Vouchers Tab -->
+        <div class="tab-pane fade" id="vouchers" role="tabpanel" aria-labelledby="vouchers-tab">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">My Vouchers</h2>
+            </div>
+            
+            {% if vouchers %}
+                <div class="row">
+                    {% for voucher in vouchers %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <h5 class="card-title">{{ voucher.code }}</h5>
+                                        <span class="badge {% if voucher.is_valid %}bg-success{% else %}bg-danger{% endif %}">
+                                            {% if voucher.is_valid %}Valid{% else %}Expired{% endif %}
+                                        </span>
+                                    </div>
+                                    <p class="card-text">{{ voucher.description }}</p>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">Valid until: {{ voucher.valid_until|date:"F j, Y" }}</small>
+                                        <strong class="text-success">{{ voucher.discount_percent }}% off</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-tag"></i>
+                    </div>
+                    <h3 class="empty-title">No Vouchers Available</h3>
+                    <p class="empty-description">You don't have any vouchers at the moment. Check back later for special promotions!</p>
+                    <a href="{% url 'product_list' %}" class="btn btn-add">
+                        <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Reviews Tab -->
+        <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+            <h2 class="mb-4">My Reviews</h2>
+            
+            {% if comments %}
+                {% for comment in comments %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title mb-0">
+                                    <a href="{% url 'product_detail' comment.product.slug %}">{{ comment.product.name }}</a>
+                                </h5>
+                                <small class="text-muted">{{ comment.created_at|date:"F j, Y" }}</small>
+                            </div>
+                            <p class="card-text">{{ comment.text }}</p>
+                            <div class="d-flex justify-content-end">
+                                <button class="action-btn action-btn-danger">
+                                    <i class="fas fa-trash-alt me-1"></i>Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h3 class="empty-title">No Reviews Yet</h3>
+                    <p class="empty-description">You haven't left any reviews for products. Share your opinions and help other shoppers!</p>
+                    <a href="{% url 'product_list' %}" class="btn btn-add">
+                        <i class="fas fa-shopping-bag me-2"></i>Browse Products
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Settings Tab -->
+        <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
+            <h2 class="mb-4">Account Settings</h2>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Personal Information</h5>
+                </div>
+                <div class="card-body">
+                    <form>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="first_name" value="{{ user.first_name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="last_name" value="{{ user.last_name }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" value="{{ user.email }}">
+                        </div>
+                        <button type="submit" class="btn btn-add">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Password</h5>
+                </div>
+                <div class="card-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current_password">
+                        </div>
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new_password">
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirm_password">
+                        </div>
+                        <button type="submit" class="btn btn-add">
+                            <i class="fas fa-key me-2"></i>Change Password
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title">Account Actions</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <p class="mb-3">Click the button below to log out of your account</p>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add event listeners to all tab buttons
+        const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
+        tabButtons.forEach(button => {
+            button.addEventListener('shown.bs.tab', function(e) {
+                // Get the target tab ID without the # symbol
+                const tabId = e.target.getAttribute('data-bs-target').substring(1);
+                
+                // Update the URL without reloading the page
+                const url = new URL(window.location.href);
+                url.searchParams.set('section', tabId);
+                window.history.pushState({}, '', url);
+            });
+        });
+        
+        // Handle initial load based on URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const section = urlParams.get('section');
+        
+        if (section) {
+            // Find and activate the corresponding tab if it exists
+            const tabButton = document.querySelector(`[data-bs-target="#${section}"]`);
+            if (tabButton) {
+                const tab = new bootstrap.Tab(tabButton);
+                tab.show();
+            }
+        }
+    });
+</script>
+{% endblock %} 

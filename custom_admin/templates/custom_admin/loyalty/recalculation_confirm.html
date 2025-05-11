@@ -1,0 +1,56 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}Recalculate Loyalty Tiers - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Recalculate Loyalty Tiers</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/custom-admin/">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/custom-admin/loyalty/dashboard/">Loyalty Program</a></li>
+        <li class="breadcrumb-item active">Recalculate Tiers</li>
+    </ol>
+    
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-sync-alt me-1"></i>
+                    Recalculate Loyalty Tiers
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Confirmation Required:</strong> You are about to recalculate loyalty tiers for all customers.
+                    </div>
+                    
+                    <p>This process will:</p>
+                    <ul>
+                        <li>Check each customer's total spend amount</li>
+                        <li>Assign them to the appropriate loyalty tier</li>
+                        <li>Create upgrade vouchers if customers move to higher tiers</li>
+                    </ul>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Note:</strong> Depending on your customer base size, this process may take some time to complete.
+                    </div>
+                    
+                    <form method="post" action="/custom-admin/loyalty/recalculate/">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 col-lg-6 mx-auto mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-sync-alt me-1"></i> Start Recalculation
+                            </button>
+                            <a href="/custom-admin/loyalty/dashboard/" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,163 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{{ page_title }} - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{{ page_title }}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/custom-admin/">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/custom-admin/loyalty/dashboard/">Loyalty Program</a></li>
+        <li class="breadcrumb-item active">Loyalty Tiers</li>
+    </ol>
+    
+    <!-- Action Buttons -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">Manage Loyalty Tiers</h5>
+                    <p class="text-muted mb-0">Create and manage tiers for your loyalty program</p>
+                </div>
+                <div>
+                    <a href="/custom-admin/loyalty/tiers/create/" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> Create New Tier
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tiers List -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-layer-group me-1"></i>
+            Loyalty Tiers
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%">#</th>
+                            <th style="width: 20%">Tier Name</th>
+                            <th style="width: 15%">Minimum Spend ($)</th>
+                            <th style="width: 15%">Discount (%)</th>
+                            <th style="width: 25%">Benefits</th>
+                            <th style="width: 20%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tier in loyalty_tiers %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-{{ tier.color_class|default:'secondary' }} me-2">&nbsp;</span>
+                                        <strong>{{ tier.name }}</strong>
+                                    </div>
+                                </td>
+                                <td>${{ tier.minimum_spend }}</td>
+                                <td>{{ tier.discount_percentage }}%</td>
+                                <td>
+                                    <ul class="mb-0 ps-3">
+                                        {% if tier.benefits %}
+                                            {% with benefits_list=tier.benefits|stringformat:"s"|split:"," %}
+                                                {% for benefit in benefits_list %}
+                                                    <li>{{ benefit|trim }}</li>
+                                                {% endfor %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <li class="text-muted">No additional benefits</li>
+                                        {% endif %}
+                                    </ul>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="/custom-admin/loyalty/tiers/{{ tier.id }}/edit/" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                data-bs-toggle="modal" data-bs-target="#deleteTierModal{{ tier.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Delete Modal -->
+                                    <div class="modal fade" id="deleteTierModal{{ tier.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Delete Loyalty Tier</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="alert alert-warning">
+                                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                                        Are you sure you want to delete the <strong>{{ tier.name }}</strong> tier?
+                                                    </div>
+                                                    <p>This will remove all customers from this tier and cannot be undone.</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <form action="/custom-admin/loyalty/tiers/{{ tier.id }}/delete/" method="post">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-danger">
+                                                            <i class="fas fa-trash me-1"></i> Delete Tier
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+                                        <h5>No Loyalty Tiers Created Yet</h5>
+                                        <p class="text-muted">Create your first tier to start your loyalty program</p>
+                                        <a href="/custom-admin/loyalty/tiers/create/" class="btn btn-primary mt-2">
+                                            <i class="fas fa-plus me-1"></i> Create First Tier
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tier Information Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-info-circle me-1"></i>
+            About Loyalty Tiers
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-xl-6">
+                    <h5>How Tiers Work</h5>
+                    <p>Loyalty tiers are assigned to customers based on their total spend. When a customer reaches the minimum spend threshold for a tier, they are automatically assigned to that tier.</p>
+                    <p>Customers receive the benefits associated with their current tier, including percentage discounts on purchases.</p>
+                </div>
+                <div class="col-xl-6">
+                    <h5>Best Practices</h5>
+                    <ul>
+                        <li>Create 3-5 tiers with clear benefits for each level</li>
+                        <li>Set achievable minimum spend thresholds</li>
+                        <li>Increase benefits with higher tiers to encourage spending</li>
+                        <li>Consider using different colors to visually distinguish tiers</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,193 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}Reorder Banners - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .banner-card {
+        cursor: grab;
+        margin-bottom: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        position: relative;
+    }
+    .banner-card.dragging {
+        opacity: 0.5;
+        cursor: grabbing;
+    }
+    .banner-header {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .banner-body {
+        padding: 15px;
+        display: flex;
+        align-items: center;
+    }
+    .banner-number {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #007bff;
+        color: white;
+        border-radius: 50%;
+        margin-right: 15px;
+    }
+    .banner-img {
+        width: 100px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-right: 15px;
+    }
+    .banner-info {
+        flex-grow: 1;
+    }
+    .banner-drag-handle {
+        cursor: grab;
+        color: #6c757d;
+        margin-left: 10px;
+    }
+    .banner-status {
+        margin-left: 10px;
+    }
+    .banner-title {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    .banner-subtitle {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .sorting-instructions {
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4 mb-4">Reorder Promotional Banners</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-sort me-1"></i>
+            Drag and Drop to Reorder
+        </div>
+        <div class="card-body">
+            <div class="sorting-instructions">
+                <h5><i class="fas fa-info-circle me-2"></i>Instructions</h5>
+                <p class="mb-0">Drag and drop the banners to change their display order. Banners with lower order numbers will appear first in the slideshow. When you're done, click the "Save Order" button to apply your changes.</p>
+            </div>
+            
+            {% if banners %}
+                <form id="reorderForm" method="post">
+                    {% csrf_token %}
+                    <div id="bannerList">
+                        {% for banner in banners %}
+                            <div class="banner-card" data-id="{{ banner.id }}">
+                                <div class="banner-header">
+                                    <div class="banner-number" id="position-{{ banner.id }}">{{ forloop.counter }}</div>
+                                    <div class="banner-info">
+                                        <div class="banner-title">{{ banner.title }}</div>
+                                        <div class="banner-subtitle">{{ banner.subtitle }}</div>
+                                    </div>
+                                    <div class="banner-status">
+                                        {% if banner.active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="banner-drag-handle">
+                                        <i class="fas fa-grip-vertical"></i>
+                                    </div>
+                                </div>
+                                <div class="banner-body">
+                                    {% if banner.image %}
+                                        <img src="{{ banner.image.url }}" alt="{{ banner.title }}" class="banner-img">
+                                    {% else %}
+                                        <div class="banner-img bg-light d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-image text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <div><strong>Button:</strong> {{ banner.button_text }}</div>
+                                        <div><small class="text-muted">Current Order: {{ banner.order }}</small></div>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="banner_ids[]" value="{{ banner.id }}">
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'admin_dashboard:admin_banners' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Banners
+                        </a>
+                        <button type="button" class="btn btn-primary" id="saveOrderBtn" disabled>
+                            <i class="fas fa-save me-1"></i>Save Order
+                        </button>
+                    </div>
+                </form>
+            {% else %}
+                <div class="alert alert-info mb-0">
+                    No banners found. <a href="{% url 'admin_dashboard:admin_banner_add' %}">Add your first banner</a>.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var bannerList = document.getElementById('bannerList');
+        var saveOrderBtn = document.getElementById('saveOrderBtn');
+        var orderChanged = false;
+        
+        if (bannerList) {
+            new Sortable(bannerList, {
+                animation: 150,
+                handle: '.banner-drag-handle',
+                ghostClass: 'dragging',
+                onEnd: function() {
+                    // Update the position numbers
+                    const bannerCards = document.querySelectorAll('.banner-card');
+                    bannerCards.forEach((card, index) => {
+                        const position = card.querySelector('.banner-number');
+                        position.textContent = index + 1;
+                    });
+                    
+                    // Enable the save button when the order changes
+                    orderChanged = true;
+                    saveOrderBtn.disabled = false;
+                }
+            });
+        }
+        
+        // Add click event handler for the save button
+        if (saveOrderBtn) {
+            saveOrderBtn.addEventListener('click', function() {
+                if (orderChanged) {
+                    // Submit the form
+                    document.getElementById('reorderForm').submit();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,572 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ category.name }} - E-Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-header {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    .category-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #212529;
+        position: relative;
+        z-index: 1;
+    }
+    .category-description {
+        font-size: 1.1rem;
+        color: #6c757d;
+        max-width: 700px;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+    .category-pattern {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 40%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent 49%, #dc3545 49%, #dc3545 51%, transparent 51%);
+        background-size: 20px 20px;
+        opacity: 0.1;
+    }
+    .product-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        height: 100%;
+    }
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+    .product-img {
+        height: 120px;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    .product-card:hover .product-img {
+        transform: scale(1.05);
+    }
+    .product-title {
+        font-weight: 600;
+        margin-top: 0.3rem;
+        font-size: 0.9rem;
+        height: 2rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    .product-price {
+        font-weight: 700;
+        color: #dc3545;
+        font-size: 1rem;
+        margin-top: 0.3rem;
+        margin-bottom: 0.5rem;
+    }
+    .product-desc {
+        color: #6c757d;
+        font-size: 0.8rem;
+        height: 2.4rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        margin-bottom: 0.5rem;
+    }
+    .product-rating-stars {
+        margin-bottom: 0.5rem;
+    }
+    .product-rating-stars .fas, 
+    .product-rating-stars .far,
+    .product-rating-stars .fa-star-half-alt {
+        color: #ffc107;
+        font-size: 0.9rem;
+    }
+    .product-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+    .product-footer {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-top: 1px solid #f1f1f1;
+    }
+    .btn-product {
+        border-radius: 50px;
+        padding: 0.4rem 0.8rem;
+        font-weight: 500;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    .btn-product:hover {
+        transform: translateY(-2px);
+    }
+    .btn-product-details {
+        color: #dc3545;
+        border-color: #dc3545;
+        background-color: #fff;
+    }
+    .btn-product-details:hover {
+        color: #fff;
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    .btn-product-cart {
+        color: #fff;
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    .btn-product-cart:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+    }
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0;
+        margin-bottom: 1.5rem;
+    }
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "›";
+        font-size: 1.2rem;
+        line-height: 1;
+        vertical-align: middle;
+    }
+    .out-of-stock-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(220, 53, 69, 0.9);
+        color: white;
+        padding: 0.3rem 0.6rem;
+        border-radius: 5px;
+        font-size: 0.8rem;
+    }
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        color: #6c757d;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        margin-bottom: 1rem;
+        text-decoration: none;
+    }
+    .back-btn:hover {
+        color: #dc3545;
+        text-decoration: none;
+    }
+    .back-btn i {
+        margin-right: 0.5rem;
+    }
+    .result-count {
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 1.5rem;
+    }
+    .empty-category {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 4rem 2rem;
+        text-align: center;
+    }
+    .empty-icon {
+        font-size: 3rem;
+        color: #dee2e6;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Horizontal layout for mobile */
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 0.75rem;
+    }
+    
+    .products-scroll {
+        display: flex;
+        overflow-x: auto;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        margin: 0 -0.5rem;
+    }
+    .products-scroll::-webkit-scrollbar {
+        display: none;
+    }
+    .product-item {
+        flex: 0 0 auto;
+        width: 160px;
+        scroll-snap-align: start;
+    }
+    
+    .mobile-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    .mobile-btn {
+        flex: 1;
+        text-align: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .mobile-btn i {
+        margin-right: 0.25rem;
+    }
+    .mobile-btn-details {
+        margin-right: 0.3rem;
+        color: #dc3545;
+        border: 1px solid #dc3545;
+        background-color: #fff;
+    }
+    .mobile-btn-cart {
+        color: #fff;
+        background-color: #dc3545;
+        border: 1px solid #dc3545;
+    }
+    
+    @media (max-width: 991px) {
+        .container {
+            max-width: 100%;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+        .product-img {
+            height: 160px;
+        }
+        .product-title {
+            font-size: 0.95rem;
+            height: auto;
+            margin-bottom: 0.5rem;
+        }
+        .product-price {
+            font-size: 1rem;
+            margin-top: 0;
+        }
+        .product-desc {
+            display: none;
+        }
+        .product-footer {
+            padding: 0.75rem;
+        }
+        .btn-product {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+        }
+        .category-header {
+            padding: 1.5rem;
+        }
+        .category-title {
+            font-size: 1.8rem;
+        }
+        .category-description {
+            font-size: 0.95rem;
+        }
+        .product-item {
+            width: 160px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'product_list' %}">Products</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ category.name }}</li>
+        </ol>
+    </nav>
+
+    <a href="{% url 'product_list' %}" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back to all products
+    </a>
+
+    <div class="category-header">
+        <div class="category-pattern"></div>
+        <h1 class="category-title">{{ category.name }}</h1>
+        <p class="category-description">
+            {% if category.description %}
+                {{ category.description }}
+            {% else %}
+                Browse our selection of high-quality {{ category.name|lower }} products. We offer the best prices and fast delivery.
+            {% endif %}
+        </p>
+        <a href="{% url 'product_list' %}" class="btn btn-outline-danger">
+            <i class="fas fa-th-large me-2"></i>View All Categories
+        </a>
+    </div>
+
+    {% if packages %}
+        <div class="section-title mb-3">
+            <h3>Packages in {{ category.name }}</h3>
+        </div>
+        <div class="result-count">
+            {{ packages|length }} package{{ packages|length|pluralize }} available
+        </div>
+        
+        <!-- Desktop View for Packages -->
+        <div class="products-grid d-none d-lg-grid mb-5">
+            {% for package in packages %}
+                <div class="product-card-container">
+                    <div class="card product-card h-100">
+                        <div class="overflow-hidden">
+                            {% if package.image %}
+                                <img src="{{ package.image.url }}" class="card-img-top product-img" alt="{{ package.name }}">
+                            {% else %}
+                                <img src="https://via.placeholder.com/400x400?text=No+Image" class="card-img-top product-img" alt="{{ package.name }}">
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="product-title">{{ package.name }}</h5>
+                            <!-- Rating stars -->
+                            <div class="product-rating-stars">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= package.average_rating|floatformat:"0" %}
+                                        <i class="fas fa-star"></i>
+                                    {% elif forloop.counter <= package.average_rating|add:"0.5"|floatformat:"0" %}
+                                        <i class="fas fa-star-half-alt"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="ms-1">{{ package.average_rating|floatformat:1 }}</span>
+                            </div>
+                            <!-- Package meta info -->
+                            <div class="product-meta">
+                                <span><i class="fas fa-comment-dots me-1"></i>{{ package.total_ratings }}</span>
+                                <span><i class="fas fa-shopping-bag me-1"></i>{{ package.sold_count }} sold</span>
+                            </div>
+                            <div class="product-price">
+                                {% if package.original_price > package.discounted_price %}
+                                    ${{ package.discounted_price }} 
+                                    <small class="text-muted text-decoration-line-through">${{ package.original_price }}</small>
+                                {% else %}
+                                    ${{ package.discounted_price }}
+                                {% endif %}
+                            </div>
+                            <p class="product-desc">{{ package.description|truncatechars:100 }}</p>
+                        </div>
+                        <div class="product-footer">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'package_detail' package.slug %}" class="btn btn-product btn-product-details">
+                                    <i class="fas fa-eye me-1"></i>Details
+                                </a>
+                                <form method="post" action="{% url 'add_package_to_cart' package.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-product btn-product-cart">
+                                        <i class="fas fa-shopping-cart me-1"></i>Add to Cart
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Mobile View for Packages -->
+        <div class="d-lg-none mb-5">
+            <div class="products-scroll">
+                {% for package in packages %}
+                    <div class="product-item">
+                        <div class="card product-card h-100 border-0 shadow-sm">
+                            {% if package.image %}
+                                <img src="{{ package.image.url }}" class="card-img-top product-img" alt="{{ package.name }}">
+                            {% else %}
+                                <img src="https://via.placeholder.com/400x400?text=No+Image" class="card-img-top product-img" alt="{{ package.name }}">
+                            {% endif %}
+                            <div class="card-body p-2">
+                                <h6 class="card-title mb-1 text-truncate" style="font-size: 0.85rem;">{{ package.name }}</h6>
+                                <!-- Rating stars -->
+                                <div class="product-rating-stars" style="font-size: 0.7rem;">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= package.average_rating|floatformat:"0" %}
+                                            <i class="fas fa-star"></i>
+                                        {% elif forloop.counter <= package.average_rating|add:"0.5"|floatformat:"0" %}
+                                            <i class="fas fa-star-half-alt"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="ms-1">{{ package.average_rating|floatformat:1 }}</span>
+                                </div>
+                                <!-- Package meta info -->
+                                <div class="product-meta" style="font-size: 0.7rem;">
+                                    <span><i class="fas fa-comment-dots me-1"></i>{{ package.total_ratings }}</span>
+                                    <span><i class="fas fa-shopping-bag me-1"></i>{{ package.sold_count }}</span>
+                                </div>
+                                <p class="card-text text-danger mb-2" style="font-size: 0.9rem;">${{ package.discounted_price }}</p>
+                                <div class="mobile-actions">
+                                    <a href="{% url 'package_detail' package.slug %}" class="mobile-btn mobile-btn-details">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    <form method="post" action="{% url 'add_package_to_cart' package.id %}" class="d-inline" style="flex: 1;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="mobile-btn mobile-btn-cart" style="width: 100%;">
+                                            <i class="fas fa-cart-plus"></i> Add
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    {% if products %}
+        <div class="result-count">
+            {{ products|length }} product{{ products|length|pluralize }} in {{ category.name }}
+        </div>
+        
+        <!-- Desktop View -->
+        <div class="products-grid d-none d-lg-grid">
+            {% for product in products %}
+                <div class="product-card-container">
+                    <div class="card product-card h-100">
+                        {% if product.stock < 1 %}
+                            <span class="out-of-stock-badge">Out of Stock</span>
+                        {% endif %}
+                        <div class="overflow-hidden">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" class="card-img-top product-img" alt="{{ product.name }}">
+                            {% else %}
+                                <img src="https://via.placeholder.com/400x400?text=No+Image" class="card-img-top product-img" alt="{{ product.name }}">
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="product-title">{{ product.name }}</h5>
+                            <!-- Rating stars -->
+                            <div class="product-rating-stars">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= product.average_rating|floatformat:"0" %}
+                                        <i class="fas fa-star"></i>
+                                    {% elif forloop.counter <= product.average_rating|add:"0.5"|floatformat:"0" %}
+                                        <i class="fas fa-star-half-alt"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="ms-1">{{ product.average_rating|floatformat:1 }}</span>
+                            </div>
+                            <!-- Product meta info -->
+                            <div class="product-meta">
+                                <span><i class="fas fa-comment-dots me-1"></i>{{ product.total_ratings }}</span>
+                                <span><i class="fas fa-shopping-bag me-1"></i>{{ product.sold_count }} sold</span>
+                            </div>
+                            <div class="product-price">${{ product.price }}</div>
+                            <p class="product-desc">{{ product.description|truncatechars:100 }}</p>
+                        </div>
+                        <div class="product-footer">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'product_detail' product.slug %}" class="btn btn-product btn-product-details">
+                                    <i class="fas fa-eye me-1"></i>Details
+                                </a>
+                                <form method="post" action="{% url 'add_to_cart' product.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-product btn-product-cart {% if product.stock < 1 %}disabled{% endif %}">
+                                        <i class="fas fa-shopping-cart me-1"></i>Add to Cart
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Mobile View -->
+        <div class="d-lg-none">
+            <div class="products-scroll">
+                {% for product in products %}
+                    <div class="product-item">
+                        <div class="card product-card h-100 border-0 shadow-sm">
+                            {% if product.stock < 1 %}
+                                <span class="out-of-stock-badge" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;">Out of Stock</span>
+                            {% endif %}
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" class="card-img-top product-img" alt="{{ product.name }}">
+                            {% else %}
+                                <img src="https://via.placeholder.com/400x400?text=No+Image" class="card-img-top product-img" alt="{{ product.name }}">
+                            {% endif %}
+                            <div class="card-body p-2">
+                                <h6 class="card-title mb-1 text-truncate" style="font-size: 0.85rem;">{{ product.name }}</h6>
+                                <!-- Rating stars -->
+                                <div class="product-rating-stars" style="font-size: 0.7rem;">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= product.average_rating|floatformat:"0" %}
+                                            <i class="fas fa-star"></i>
+                                        {% elif forloop.counter <= product.average_rating|add:"0.5"|floatformat:"0" %}
+                                            <i class="fas fa-star-half-alt"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="ms-1">{{ product.average_rating|floatformat:1 }}</span>
+                                </div>
+                                <!-- Product meta info -->
+                                <div class="product-meta" style="font-size: 0.7rem;">
+                                    <span><i class="fas fa-comment-dots me-1"></i>{{ product.total_ratings }}</span>
+                                    <span><i class="fas fa-shopping-bag me-1"></i>{{ product.sold_count }}</span>
+                                </div>
+                                <p class="card-text text-danger mb-2" style="font-size: 0.9rem;">${{ product.price }}</p>
+                                <div class="mobile-actions">
+                                    <a href="{% url 'product_detail' product.slug %}" class="mobile-btn mobile-btn-details">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    <form method="post" action="{% url 'add_to_cart' product.id %}" class="d-inline" style="flex: 1;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="mobile-btn mobile-btn-cart {% if product.stock < 1 %}disabled{% endif %}" style="width: 100%;">
+                                            <i class="fas fa-cart-plus"></i> Add
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div class="empty-category">
+            <div class="empty-icon">
+                <i class="fas fa-box-open"></i>
+            </div>
+            <h3>No products available</h3>
+            <p class="text-muted mb-4">We're currently restocking our {{ category.name|lower }} collection. Please check back soon!</p>
+            <a href="{% url 'product_list' %}" class="btn btn-danger">
+                <i class="fas fa-th-large me-2"></i>Browse Other Categories
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

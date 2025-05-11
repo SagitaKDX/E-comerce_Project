@@ -1,0 +1,230 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+{% block extrahead %}{{ block.super }}
+<style>
+    .voucher-type-selector {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .voucher-type-card {
+        flex: 1;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .voucher-type-card:hover {
+        border-color: #79aec8;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    .voucher-type-card.selected {
+        border-color: #417690;
+        background-color: #f5f9fa;
+    }
+    
+    .voucher-type-card h3 {
+        margin-top: 0;
+        color: #417690;
+    }
+    
+    .discount-type-toggle {
+        display: flex;
+        background: #f5f5f5;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+    }
+    
+    .discount-type-option {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .discount-type-option:first-child {
+        border-right: 1px solid #ddd;
+    }
+    
+    .discount-type-option.selected {
+        background-color: #417690;
+        color: white;
+    }
+    
+    .form-help-text {
+        color: #666;
+        font-size: 0.9em;
+        margin-top: 5px;
+    }
+    
+    .fieldset-description {
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-left: 4px solid #79aec8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    {% if change %}
+        {{ block.super }}
+    {% else %}
+        <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}action="{{ form_url }}" method="post" id="{{ opts.model_name }}_form" novalidate>
+            {% csrf_token %}
+            {% block form_top %}{% endblock %}
+            
+            <div class="js-inline-admin-formset inline-group" id="voucher-type-selector">
+                <h2>Create New Voucher</h2>
+                
+                <div class="fieldset-description">
+                    Choose the type of voucher you want to create. General vouchers are available to all users, 
+                    while dedicated vouchers can be assigned to specific users.
+                </div>
+                
+                <div class="voucher-type-selector">
+                    <div class="voucher-type-card" data-type="general">
+                        <h3>General Voucher</h3>
+                        <p>Available to all users</p>
+                        <p>Examples: Seasonal discounts, promotional codes</p>
+                    </div>
+                    <div class="voucher-type-card" data-type="dedicated">
+                        <h3>Dedicated Voucher</h3>
+                        <p>Assigned to specific users</p>
+                        <p>Examples: Loyalty rewards, exclusive offers</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                {% if errors %}
+                    <p class="errornote">
+                    {% if errors|length == 1 %}{% trans "Please correct the error below." %}{% else %}{% trans "Please correct the errors below." %}{% endif %}
+                    </p>
+                    {{ adminform.form.non_field_errors }}
+                {% endif %}
+                
+                {% block field_sets %}
+                    {% for fieldset in adminform %}
+                        {% include "admin/includes/fieldset.html" %}
+                    {% endfor %}
+                {% endblock %}
+                
+                {% block after_field_sets %}{% endblock %}
+                
+                {% block inline_field_sets %}
+                    {% for inline_admin_formset in inline_admin_formsets %}
+                        {% include inline_admin_formset.opts.template %}
+                    {% endfor %}
+                {% endblock %}
+                
+                {% block after_related_objects %}{% endblock %}
+                
+                {% block submit_buttons_bottom %}
+                <div class="submit-row">
+                    <input type="submit" value="{% trans 'Save' %}" class="default" name="_save">
+                    <input type="submit" value="{% trans 'Save and add another' %}" name="_addanother">
+                    <input type="submit" value="{% trans 'Save and continue editing' %}" name="_continue">
+                </div>
+                {% endblock %}
+                
+                {% block admin_change_form_document_ready %}
+                    {{ block.super }}
+                {% endblock %}
+            </div>
+        </form>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle voucher type selection
+        const cards = document.querySelectorAll('.voucher-type-card');
+        const voucherTypeField = document.getElementById('id_voucher_type');
+        
+        // Set initial selection based on current value
+        if (voucherTypeField) {
+            const currentValue = voucherTypeField.value;
+            cards.forEach(card => {
+                if (card.dataset.type === currentValue) {
+                    card.classList.add('selected');
+                }
+            });
+        }
+        
+        cards.forEach(card => {
+            card.addEventListener('click', function() {
+                // Update visual selection
+                cards.forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // Update the actual form field
+                if (voucherTypeField) {
+                    voucherTypeField.value = this.dataset.type;
+                }
+            });
+        });
+        
+        // Handle discount type selection
+        const discountTypeField = document.getElementById('id_discount_type');
+        const maxDiscountRow = document.querySelector('.field-max_discount').closest('.form-row');
+        
+        if (discountTypeField) {
+            // Create toggle UI
+            const toggleContainer = document.createElement('div');
+            toggleContainer.className = 'discount-type-toggle';
+            
+            const percentageOption = document.createElement('div');
+            percentageOption.className = 'discount-type-option';
+            percentageOption.dataset.type = 'percentage';
+            percentageOption.textContent = 'Percentage Discount';
+            
+            const fixedOption = document.createElement('div');
+            fixedOption.className = 'discount-type-option';
+            fixedOption.dataset.type = 'fixed';
+            fixedOption.textContent = 'Fixed Amount Discount';
+            
+            toggleContainer.appendChild(percentageOption);
+            toggleContainer.appendChild(fixedOption);
+            
+            // Insert toggle before the select field
+            discountTypeField.style.display = 'none';
+            discountTypeField.parentNode.insertBefore(toggleContainer, discountTypeField);
+            
+            // Set initial state
+            if (discountTypeField.value === 'percentage') {
+                percentageOption.classList.add('selected');
+                maxDiscountRow.style.display = '';
+            } else {
+                fixedOption.classList.add('selected');
+                maxDiscountRow.style.display = 'none';
+            }
+            
+            // Handle toggle clicks
+            percentageOption.addEventListener('click', function() {
+                percentageOption.classList.add('selected');
+                fixedOption.classList.remove('selected');
+                discountTypeField.value = 'percentage';
+                maxDiscountRow.style.display = '';
+            });
+            
+            fixedOption.addEventListener('click', function() {
+                fixedOption.classList.add('selected');
+                percentageOption.classList.remove('selected');
+                discountTypeField.value = 'fixed';
+                maxDiscountRow.style.display = 'none';
+            });
+        }
+    });
+</script>
+{% endblock %} 

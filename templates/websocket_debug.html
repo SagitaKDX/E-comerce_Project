@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #log { 
+            height: 300px; 
+            overflow-y: auto; 
+            border: 1px solid #ccc; 
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            background: #f8f9fa;
+        }
+        button { margin: 5px; padding: 8px 15px; cursor: pointer; }
+        .connected { color: green; font-weight: bold; }
+        .disconnected { color: red; font-weight: bold; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Debug Client</h1>
+    
+    <div>
+        <p>Status: <span id="status" class="disconnected">Disconnected</span></p>
+        
+        <div>
+            <label for="ws-url">WebSocket URL:</label>
+            <input type="text" id="ws-url" size="50" value="ws://127.0.0.1:8001/ws/agent/notifications/">
+        </div>
+        
+        <div>
+            <button id="connect-btn">Connect</button>
+            <button id="disconnect-btn" disabled>Disconnect</button>
+        </div>
+    </div>
+    
+    <div>
+        <h3>Log</h3>
+        <div id="log"></div>
+    </div>
+    
+    <script>
+        let ws = null;
+        
+        const connectBtn = document.getElementById('connect-btn');
+        const disconnectBtn = document.getElementById('disconnect-btn');
+        const statusSpan = document.getElementById('status');
+        const urlInput = document.getElementById('ws-url');
+        const logDiv = document.getElementById('log');
+        
+        function log(message, className) {
+            const now = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            if (className) {
+                entry.className = className;
+            }
+            entry.textContent = `[${now}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function connect() {
+            const url = urlInput.value;
+            
+            log(`Attempting to connect to ${url}`);
+            
+            try {
+                ws = new WebSocket(url);
+                
+                ws.onopen = function() {
+                    log('Connection established!', 'connected');
+                    statusSpan.textContent = 'Connected';
+                    statusSpan.className = 'connected';
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                };
+                
+                ws.onmessage = function(event) {
+                    log(`Received message: ${event.data}`);
+                    
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(`Parsed message type: ${data.type}`);
+                    } catch (e) {
+                        log(`Error parsing message: ${e.message}`, 'error');
+                    }
+                };
+                
+                ws.onclose = function(event) {
+                    log(`Connection closed. Code: ${event.code}, Reason: ${event.reason || 'No reason provided'}`);
+                    statusSpan.textContent = 'Disconnected';
+                    statusSpan.className = 'disconnected';
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                    ws = null;
+                };
+                
+                ws.onerror = function(event) {
+                    log('WebSocket error occurred', 'error');
+                    log(`Error details: ${JSON.stringify(event)}`, 'error');
+                };
+            } catch (error) {
+                log(`Failed to create WebSocket: ${error.message}`, 'error');
+            }
+        }
+        
+        function disconnect() {
+            if (ws) {
+                log('Closing connection...');
+                ws.close();
+            }
+        }
+        
+        connectBtn.addEventListener('click', connect);
+        disconnectBtn.addEventListener('click', disconnect);
+        
+        // Auto-connect on page load
+        window.addEventListener('load', () => {
+            setTimeout(connect, 1000);
+        });
+    </script>
+</body>
+</html> 

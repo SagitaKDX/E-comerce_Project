@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}E-Shop Admin{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- ApexCharts for advanced visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- Custom Admin CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'custom_admin/css/admin.css' %}">
+    {% block extra_css %}{% endblock %}
+    <style>
+        :root {
+            --sidebar-bg: #4169e1;
+            --sidebar-text: #ffffff;
+            --sidebar-hover: rgba(255, 255, 255, 0.1);
+            --sidebar-active: rgba(255, 255, 255, 0.2);
+            --btn-primary: #3f51b5;
+            --btn-primary-hover: #303f9f;
+            --btn-success: #4caf50;
+            --btn-success-hover: #388e3c;
+            --btn-danger: #f44336;
+            --btn-danger-hover: #d32f2f;
+            --btn-warning: #ff9800;
+            --btn-warning-hover: #f57c00;
+            --btn-info: #2196f3;
+            --btn-info-hover: #1976d2;
+            --btn-secondary: #6c757d;
+            --btn-secondary-hover: #5a6268;
+            --card-bg: #ffffff;
+            --table-header-bg: #f5f7f9;
+            --table-hover-bg: #f8f9fa;
+            --border-color: #e0e0e0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .mobile-header {
+            display: none;
+        }
+        
+        #sidebar {
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            min-height: 100vh;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .admin-brand {
+            padding: 20px 15px;
+            margin-bottom: 10px;
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .nav-menu {
+            padding: 0 15px;
+        }
+        
+        .nav-section {
+            margin-bottom: 30px;
+        }
+        
+        .nav-section-title {
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 10px 15px;
+            margin-top: 15px;
+        }
+        
+        .nav-item {
+            margin-bottom: 5px;
+        }
+        
+        .nav-link {
+            color: var(--sidebar-text) !important;
+            border-radius: 4px;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .nav-link:hover {
+            background-color: var(--sidebar-hover);
+        }
+        
+        .nav-link.active {
+            background-color: var(--sidebar-active);
+            font-weight: 500;
+        }
+        
+        .nav-icon {
+            width: 20px;
+            margin-right: 10px;
+            text-align: center;
+        }
+        
+        /* Enhanced Button Styles */
+        .btn {
+            border-radius: 4px;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-transform: capitalize;
+            border: none;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary {
+            background-color: var(--btn-primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--btn-primary-hover);
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: var(--btn-success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: var(--btn-success-hover);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--btn-danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: var(--btn-danger-hover);
+            color: white;
+        }
+        
+        .btn-warning {
+            background-color: var(--btn-warning);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: var(--btn-warning-hover);
+            color: white;
+        }
+        
+        .btn-info {
+            background-color: var(--btn-info);
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background-color: var(--btn-info-hover);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: var(--btn-secondary);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--btn-secondary-hover);
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .btn-lg {
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-icon i {
+            margin-right: 0.5rem;
+        }
+        
+        .btn-icon-only {
+            width: 2.5rem;
+            height: 2.5rem;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-icon-only.btn-sm {
+            width: 2rem;
+            height: 2rem;
+        }
+        
+        /* Action buttons in tables */
+        .action-buttons .btn {
+            margin-right: 0.25rem;
+        }
+        
+        /* Card header buttons */
+        .card-header .btn {
+            margin-left: 0.5rem;
+        }
+        
+        /* Table styles */
+        .table {
+            background-color: var(--card-bg);
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .table thead th {
+            background-color: var(--table-header-bg);
+            border-bottom: 2px solid var(--border-color);
+            color: #333;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+        }
+        
+        .table tbody tr:hover {
+            background-color: var(--table-hover-bg);
+        }
+        
+        .table td {
+            padding: 0.75rem 1rem;
+            vertical-align: middle;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        /* Banner navigation tabs */
+        .nav-tabs {
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+            background-color: var(--card-bg);
+            border-radius: 0.5rem 0.5rem 0 0;
+            overflow: hidden;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 0;
+            font-weight: 500;
+            padding: 1rem 1.5rem;
+            color: var(--btn-secondary) !important;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+            background-color: #f8f9fa;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            background-color: rgba(0, 0, 0, 0.03);
+            transform: none;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background-color: var(--card-bg);
+            border-bottom: 3px solid var(--btn-primary);
+            color: var(--btn-primary) !important;
+            font-weight: 600;
+        }
+        
+        .nav-tabs .nav-link.text-success {
+            color: var(--btn-success) !important;
+        }
+        
+        .nav-tabs .nav-link.text-success.active,
+        .nav-tabs .nav-link.text-success:hover {
+            border-bottom-color: var(--btn-success);
+            background-color: rgba(76, 175, 80, 0.05);
+        }
+        
+        .nav-tabs .nav-link.text-info {
+            color: var(--btn-info) !important;
+        }
+        
+        .nav-tabs .nav-link.text-info.active,
+        .nav-tabs .nav-link.text-info:hover {
+            border-bottom-color: var(--btn-info);
+            background-color: rgba(33, 150, 243, 0.05);
+        }
+        
+        .nav-tabs .nav-link.text-warning {
+            color: var(--btn-warning) !important;
+        }
+        
+        .nav-tabs .nav-link.text-warning.active,
+        .nav-tabs .nav-link.text-warning:hover {
+            border-bottom-color: var(--btn-warning);
+            background-color: rgba(255, 152, 0, 0.05);
+        }
+        
+        .nav-tabs .nav-link.text-danger {
+            color: var(--btn-danger) !important;
+        }
+        
+        .nav-tabs .nav-link.text-danger.active,
+        .nav-tabs .nav-link.text-danger:hover {
+            border-bottom-color: var(--btn-danger);
+            background-color: rgba(244, 67, 54, 0.05);
+        }
+        
+        .nav-tabs.nav-fill .nav-link {
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-tabs .nav-link i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Banner specific styles */
+        .banner-card {
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+            background-color: var(--card-bg);
+        }
+        
+        .banner-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        .banner-image {
+            position: relative;
+            overflow: hidden;
+            height: 180px;
+            background-color: #f8f9fa;
+        }
+        
+        .banner-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .banner-card:hover .banner-image img {
+            transform: scale(1.05);
+        }
+        
+        .banner-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        
+        .banner-info {
+            padding: 15px;
+        }
+        
+        .banner-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .banner-meta {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .banner-status {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .banner-status.active {
+            background-color: rgba(76, 175, 80, 0.1);
+            color: var(--btn-success);
+        }
+        
+        .banner-status.inactive {
+            background-color: rgba(244, 67, 54, 0.1);
+            color: var(--btn-danger);
+        }
+        
+        .banner-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .banner-sortable {
+            cursor: move;
+            background-color: var(--card-bg);
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .banner-sortable:hover {
+            background-color: var(--table-hover-bg);
+        }
+        
+        .banner-sortable-handle {
+            cursor: move;
+            color: #aaa;
+            margin-right: 10px;
+        }
+        
+        .ui-sortable-helper {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .ui-sortable-placeholder {
+            visibility: visible !important;
+            background-color: rgba(0, 0, 0, 0.05);
+            border: 1px dashed #aaa;
+            border-radius: 4px;
+        }
+        
+        @media (max-width: 767.98px) {
+            .mobile-header {
+                display: flex;
+                padding: 10px 15px;
+                background-color: var(--sidebar-bg);
+                color: white;
+                align-items: center;
+                justify-content: space-between;
+            }
+            
+            .mobile-logout-form {
+                margin: 0;
+            }
+            
+            .mobile-logout-btn {
+                color: white;
+                background: transparent;
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 4px;
+                padding: 4px 12px;
+                font-size: 14px;
+            }
+            
+            .mobile-logout-btn i {
+                margin-right: 5px;
+            }
+            
+            #sidebar {
+                margin-left: -100%;
+                position: fixed;
+                z-index: 1050;
+                width: 250px;
+            }
+            
+            #sidebar.active {
+                margin-left: 0;
+            }
+            
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 1040;
+            }
+            
+            .overlay.active {
+                display: block;
+            }
+            
+            /* Adjust button sizes for mobile */
+            .btn {
+                padding: 0.4rem 0.8rem;
+            }
+            
+            .btn-icon-only {
+                width: 2.2rem;
+                height: 2.2rem;
+            }
+            
+            .banner-image {
+                height: 140px;
+            }
+            
+            .banner-card {
+                margin-bottom: 1rem;
+            }
+            
+            /* Adjust tab styles for mobile */
+            .nav-tabs {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            
+            .nav-tabs .nav-link {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Header - Only visible on small screens -->
+    <div class="mobile-header">
+        <div class="d-flex align-items-center">
+            <button type="button" id="sidebarCollapse" class="btn btn-link text-white me-2">
+                <i class="fas fa-bars"></i>
+            </button>
+            <span>E-Shop Admin</span>
+        </div>
+        <form action="/custom-admin/logout/" method="post" class="mobile-logout-form">
+            {% csrf_token %}
+            <button type="submit" class="mobile-logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </form>
+    </div>
+
+    <!-- Mobile overlay -->
+    <div class="overlay"></div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="admin-brand">
+                    E-Shop Admin
+                </div>
+                <div class="nav-menu">
+                    <a class="nav-link {% if request.path == '/custom-admin/' %}active{% endif %}" href="/custom-admin/">
+                        <span class="nav-icon"><i class="fas fa-tachometer-alt"></i></span>
+                        Dashboard
+                    </a>
+                    
+                    <a class="nav-link {% if '/custom-admin/products' in request.path %}active{% endif %}" href="/custom-admin/products/">
+                        <span class="nav-icon"><i class="fas fa-box"></i></span>
+                        Products
+                    </a>
+                    
+                    <a class="nav-link {% if '/custom-admin/packages' in request.path %}active{% endif %}" href="/custom-admin/packages/">
+                        <span class="nav-icon"><i class="fas fa-boxes"></i></span>
+                        Packages
+                    </a>
+                    
+                    <a class="nav-link {% if '/custom-admin/categories' in request.path %}active{% endif %}" href="/custom-admin/categories/">
+                        <span class="nav-icon"><i class="fas fa-list"></i></span>
+                        Categories
+                    </a>
+                    
+                    <a class="nav-link {% if '/custom-admin/banners' in request.path %}active{% endif %}" href="/custom-admin/banners/">
+                        <span class="nav-icon"><i class="fas fa-image"></i></span>
+                        Promo Banners
+                    </a>
+                    
+                    <a class="nav-link {% if '/custom-admin/vouchers' in request.path %}active{% endif %}" href="/custom-admin/vouchers/">
+                        <span class="nav-icon"><i class="fas fa-ticket-alt"></i></span>
+                        Vouchers
+                    </a>
+                    
+                    <a class="nav-link {% if '/custom-admin/orders' in request.path %}active{% endif %}" href="/custom-admin/orders/">
+                        <span class="nav-icon"><i class="fas fa-shopping-cart"></i></span>
+                        Orders
+                    </a>
+                    
+                    <a class="nav-link {% if '/custom-admin/users' in request.path %}active{% endif %}" href="/custom-admin/users/">
+                        <span class="nav-icon"><i class="fas fa-users"></i></span>
+                        Users
+                    </a>
+                    
+                    <a class="nav-link {% if '/custom-admin/analytics' in request.path %}active{% endif %}" href="/custom-admin/analytics/">
+                        <span class="nav-icon"><i class="fas fa-chart-area"></i></span>
+                        Analytics
+                    </a>
+                    
+                    <a class="nav-link {% if '/custom-admin/loyalty' in request.path %}active{% endif %}" href="/custom-admin/loyalty/dashboard/">
+                        <span class="nav-icon"><i class="fas fa-award"></i></span>
+                        Loyalty Program
+                    </a>
+                    
+                    <a class="nav-link {% if '/custom-admin/faq' in request.path %}active{% endif %}" href="/custom-admin/faq/">
+                        <span class="nav-icon"><i class="fas fa-question-circle"></i></span>
+                        Manage FAQs
+                    </a>
+                    
+                    <div class="nav-section">
+                        <div class="nav-section-title">CUSTOMER RELATIONSHIP</div>
+                        <a class="nav-link {% if '\crm' in request.path %}active{% endif %}" href="/crm/">
+                            <span class="nav-icon"><i class="fas fa-user-tie"></i></span>
+                            CRM System
+                        </a>
+                    </div>
+                    
+                    <div class="mt-5">
+                        <form action="/custom-admin/logout/" method="post" style="margin:0;">
+                            {% csrf_token %}
+                            <button type="submit" class="nav-link border-0 w-100 text-start">
+                                <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span>
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </nav>
+            
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">{% block page_title %}Dashboard{% endblock %}</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        {% block page_actions %}{% endblock %}
+                    </div>
+                </div>
+                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Admin JS -->
+    {% load static %}
+    <script src="{% static 'custom_admin/js/admin.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile sidebar toggle
+            const sidebarCollapse = document.getElementById('sidebarCollapse');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.overlay');
+            
+            if (sidebarCollapse) {
+                sidebarCollapse.addEventListener('click', function() {
+                    sidebar.classList.toggle('active');
+                    overlay.classList.toggle('active');
+                });
+            }
+            
+            if (overlay) {
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media
+staticfiles/
+
+# Environment variables
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Project specific
+node_modules/
+bower_components/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Translations
+*.mo
+*.pot
+
+# SQL dump files with sensitive data
+ecommerce_db.sql
+
+# Django migrations (uncomment if you want to include migrations)
+# */migrations/*
+# !*/migrations/__init__.py 

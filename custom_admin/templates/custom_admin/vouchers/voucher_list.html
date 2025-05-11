@@ -1,0 +1,283 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Voucher Management</h1>
+        <div>
+            <a href="{% url 'admin_dashboard:admin_voucher_add' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Voucher
+            </a>
+            <a href="#" class="btn btn-info ms-2" data-bs-toggle="modal" data-bs-target="#voucherGuideModal">
+                <i class="fas fa-question-circle"></i> Voucher Guide
+            </a>
+        </div>
+    </div>
+    
+    <!-- Dashboard Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Vouchers</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_vouchers }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-ticket-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Active Vouchers</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_vouchers }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                General Vouchers
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ general_vouchers }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-globe fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Dedicated Vouchers
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ dedicated_vouchers }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-tag fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vouchers Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">All Vouchers</h6>
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    Filter By
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="?">All Vouchers</a></li>
+                    <li><a class="dropdown-item" href="?type=general">General Vouchers</a></li>
+                    <li><a class="dropdown-item" href="?type=dedicated">Dedicated Vouchers</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="?status=active">Active Only</a></li>
+                    <li><a class="dropdown-item" href="?status=expired">Expired</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Type</th>
+                            <th>Discount</th>
+                            <th>Valid From</th>
+                            <th>Valid To</th>
+                            <th>Status</th>
+                            <th>Usage</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for voucher in vouchers %}
+                        <tr>
+                            <td><strong>{{ voucher.code }}</strong></td>
+                            <td>
+                                {% if voucher.voucher_type == 'general' %}
+                                <span class="badge bg-info">General</span>
+                                {% else %}
+                                <span class="badge bg-warning">Dedicated</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if voucher.discount_type == 'percentage' %}
+                                {{ voucher.discount_value }}%
+                                {% if voucher.max_discount %}
+                                <small class="text-muted d-block">(Max: ${{ voucher.max_discount }})</small>
+                                {% endif %}
+                                {% else %}
+                                ${{ voucher.discount_value }}
+                                {% endif %}
+                            </td>
+                            <td>{{ voucher.valid_from|date:"M d, Y" }}</td>
+                            <td>{{ voucher.valid_to|date:"M d, Y" }}</td>
+                            <td>
+                                {% if voucher.is_valid %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ voucher.used_count }} / {% if voucher.usage_limit %}{{ voucher.usage_limit }}{% else %}∞{% endif %}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'admin_dashboard:admin_voucher_edit' voucher.id %}" class="btn btn-sm btn-primary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'admin_dashboard:admin_voucher_duplicate' voucher.id %}" class="btn btn-sm btn-info" title="Duplicate">
+                                        <i class="fas fa-copy"></i>
+                                    </a>
+                                    {% if voucher.voucher_type == 'dedicated' %}
+                                    <a href="{% url 'admin_dashboard:assign_vouchers_to_users' %}?voucher_ids={{ voucher.id }}" class="btn btn-sm btn-success" title="Assign to Users">
+                                        <i class="fas fa-user-plus"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'admin_dashboard:admin_voucher_delete' voucher.id %}" class="btn btn-sm btn-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">No vouchers found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Voucher Guide Modal -->
+<div class="modal fade" id="voucherGuideModal" tabindex="-1" aria-labelledby="voucherGuideModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="voucherGuideModalLabel">Voucher Management Guide</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Types of Vouchers</h5>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                General Vouchers
+                            </div>
+                            <div class="card-body">
+                                <p>Available to all customers</p>
+                                <ul>
+                                    <li>Seasonal sales (SUMMER25, WINTER15)</li>
+                                    <li>New customer promotions</li>
+                                    <li>Product launches</li>
+                                    <li>Flash sales</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-warning text-dark">
+                                Dedicated Vouchers
+                            </div>
+                            <div class="card-body">
+                                <p>Assigned to specific customers</p>
+                                <ul>
+                                    <li>Loyalty rewards for repeat customers</li>
+                                    <li>Win-back campaigns for inactive users</li>
+                                    <li>VIP customer benefits</li>
+                                    <li>Compensation for issues</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h5>Discount Types</h5>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                Percentage Discount
+                            </div>
+                            <div class="card-body">
+                                <p>Takes off a percentage of the order total</p>
+                                <ul>
+                                    <li>Example: 15% off the entire order</li>
+                                    <li>Works well for most promotions</li>
+                                    <li>Consider setting a maximum discount for high-value orders</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                Fixed Amount Discount
+                            </div>
+                            <div class="card-body">
+                                <p>Takes off a specific dollar amount</p>
+                                <ul>
+                                    <li>Example: $10 off your order</li>
+                                    <li>Good for precise discount amounts</li>
+                                    <li>Set minimum purchase amount to prevent loss</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h5>Best Practices</h5>
+                <ul>
+                    <li><strong>Voucher Codes:</strong> Use clear, meaningful codes (e.g., SUMMER25 for 25% off summer items)</li>
+                    <li><strong>Expiry Dates:</strong> Always set expiry dates to create urgency and manage budget expectations</li>
+                    <li><strong>Minimum Purchase:</strong> Setting a minimum purchase can increase average order value</li>
+                    <li><strong>Usage Limits:</strong> Control how many times a voucher can be redeemed to protect against overuse</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

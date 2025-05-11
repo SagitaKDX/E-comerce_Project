@@ -1,0 +1,194 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}Sales Chart{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Sales Analytics</h1>
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Sales Over Time</h6>
+                    <div class="dropdown no-arrow">
+                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="periodDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Monthly
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="periodDropdown">
+                            <a class="dropdown-item" href="#" data-period="daily">Daily (30 days)</a>
+                            <a class="dropdown-item" href="#" data-period="weekly">Weekly (12 weeks)</a>
+                            <a class="dropdown-item active" href="#" data-period="monthly">Monthly (12 months)</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:60vh;">
+                        <div id="loading-indicator" class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading chart data...</p>
+                        </div>
+                        <div id="error-container" class="alert alert-danger d-none" role="alert">
+                            Error loading chart data. Please try again later.
+                        </div>
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize the chart with default settings
+    let salesChart = null;
+    let currentPeriod = 'monthly';
+    
+    function initializeChart() {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        
+        // Set default font
+        Chart.defaults.font.family = "'Nunito', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+        Chart.defaults.font.size = 12;
+        
+        salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Sales ($)',
+                    data: [],
+                    backgroundColor: 'rgba(78, 115, 223, 0.2)',
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                    pointHitRadius: 10,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            drawBorder: false,
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            drawBorder: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        bodyFont: {
+                            size: 14
+                        },
+                        titleFont: {
+                            size: 16,
+                            weight: 'bold'
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                return 'Sales: $' + parseFloat(context.raw).toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        loadChartData(currentPeriod);
+    }
+    
+    function loadChartData(period) {
+        // Show loading indicator
+        document.getElementById('loading-indicator').classList.remove('d-none');
+        document.getElementById('error-container').classList.add('d-none');
+        
+        // Update button text
+        const periodText = period === 'daily' ? 'Daily (30 days)' : 
+                          period === 'weekly' ? 'Weekly (12 weeks)' : 'Monthly (12 months)';
+        document.getElementById('periodDropdown').innerText = periodText;
+        
+        // Update current period
+        currentPeriod = period;
+        
+        // Update dropdown active class
+        document.querySelectorAll('.dropdown-menu a').forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('data-period') === period) {
+                item.classList.add('active');
+            }
+        });
+        
+        // Fetch chart data
+        fetch(`{% url 'admin:admin_chart_data' %}?type=sales&period=${period}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loading indicator
+                document.getElementById('loading-indicator').classList.add('d-none');
+                
+                // Update chart data
+                salesChart.data.labels = data.labels;
+                salesChart.data.datasets[0].data = data.values;
+                
+                // Update chart title based on period
+                const titleText = period === 'daily' ? 'Daily Sales (Last 30 Days)' : 
+                                 period === 'weekly' ? 'Weekly Sales (Last 12 Weeks)' : 
+                                 'Monthly Sales (Last 12 Months)';
+                
+                // Update chart
+                salesChart.update();
+            })
+            .catch(error => {
+                console.error('Error fetching chart data:', error);
+                // Hide loading indicator and show error
+                document.getElementById('loading-indicator').classList.add('d-none');
+                document.getElementById('error-container').classList.remove('d-none');
+            });
+    }
+    
+    // Initialize chart when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeChart();
+        
+        // Period dropdown event listeners
+        document.querySelectorAll('.dropdown-menu a').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const period = this.getAttribute('data-period');
+                loadChartData(period);
+            });
+        });
+    });
+</script>
+{% endblock %}

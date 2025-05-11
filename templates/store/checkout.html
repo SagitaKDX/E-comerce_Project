@@ -1,0 +1,443 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Checkout - E-Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checkout-container {
+        padding: 2rem 0;
+    }
+    .checkout-section {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .checkout-section-title {
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .checkout-title {
+        font-weight: 700;
+        margin-bottom: 2rem;
+    }
+    .checkout-heading {
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    .order-summary {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    .order-summary-title {
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .order-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .order-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    .order-item-img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin-right: 1rem;
+    }
+    .order-item-details {
+        flex: 1;
+    }
+    .order-item-name {
+        font-weight: 500;
+        margin-bottom: 0.2rem;
+    }
+    .order-item-price {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .order-item-quantity {
+        margin-left: 0.5rem;
+        background-color: #f0f0f0;
+        padding: 0.2rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.8rem;
+    }
+    .order-item-total {
+        font-weight: 600;
+        margin-left: 1rem;
+    }
+    .order-total-section {
+        margin-top: 1.5rem;
+    }
+    .order-total-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.7rem;
+        font-size: 0.95rem;
+    }
+    .order-total-label {
+        color: #6c757d;
+    }
+    .order-total-value {
+        font-weight: 600;
+    }
+    .order-discount {
+        color: #28a745;
+    }
+    .order-grand-total {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e0e0e0;
+    }
+    .btn-checkout {
+        background-color: #dc3545;
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.8rem 0;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 1.5rem;
+    }
+    .btn-checkout:hover {
+        background-color: #c82333;
+    }
+    .address-card {
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .address-card.selected {
+        border-color: #28a745;
+        background-color: #f0fff4;
+    }
+    .address-card:hover {
+        border-color: #c82333;
+    }
+    .address-radio {
+        margin-right: 0.5rem;
+    }
+    .payment-method-card {
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .payment-method-card.selected {
+        border-color: #28a745;
+        background-color: #f0fff4;
+    }
+    .payment-method-card:hover {
+        border-color: #c82333;
+    }
+    .payment-method-radio {
+        margin-right: 0.5rem;
+    }
+    .saved-card-details {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #f0f0f0;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .address-details {
+        display: none;
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    .address-details.show {
+        display: block;
+    }
+    @media (max-width: 767px) {
+        .order-summary {
+            margin-top: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container checkout-container">
+    <h1 class="checkout-title">Checkout</h1>
+    
+    <form method="post" action="{% url 'checkout' %}">
+        {% csrf_token %}
+        
+        {% for item in selected_items %}
+            <input type="hidden" name="selected_items" value="{{ item.id }}">
+        {% endfor %}
+        
+        {% for package in selected_packages %}
+            <input type="hidden" name="selected_packages" value="{{ package.id }}">
+        {% endfor %}
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="checkout-section">
+                    <h3 class="checkout-section-title">Shipping Information</h3>
+                    
+                    {% if shipping_addresses %}
+                        <div class="mb-4">
+                            <h4 class="checkout-heading">Select a Shipping Address</h4>
+                            {% for address in shipping_addresses %}
+                                <div class="address-card {% if default_address and default_address.id == address.id %}selected{% endif %}">
+                                    <div class="form-check">
+                                        <input class="form-check-input address-radio" type="radio" name="shipping_address" id="address_{{ address.id }}" value="{{ address.id }}" {% if default_address and default_address.id == address.id %}checked{% elif forloop.first and not default_address %}checked{% endif %} data-address-id="{{ address.id }}">
+                                        <label class="form-check-label" for="address_{{ address.id }}">
+                                            <strong>{{ address.name }}</strong> - {{ address.address_line1 }}, {{ address.city }}, {{ address.state }} {{ address.postal_code }}
+                                        </label>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            
+                            <div class="mt-3">
+                                <a href="{% url 'add_address' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-plus-circle me-2"></i>Add New Address
+                                </a>
+                            </div>
+                            
+                            <div id="address-details-display" class="address-details show">
+                                <!-- This will be populated via JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="phone_number" class="form-label">Phone Number (optional)</label>
+                            <input type="tel" class="form-control" id="phone_number" name="phone_number" placeholder="Enter phone number for delivery">
+                            <small class="text-muted">If left empty, we'll use the phone number from your shipping address.</small>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning mb-4">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            You have no shipping addresses. Please add one to continue.
+                        </div>
+                        <a href="{% url 'add_address' %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Add Shipping Address
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <div class="checkout-section">
+                    <h3 class="checkout-section-title">Payment Method</h3>
+                    
+                    <div class="mb-4">
+                        <div class="payment-method-card selected">
+                            <div class="form-check">
+                                <input class="form-check-input payment-method-radio" type="radio" name="payment_method" id="payment_credit_card" value="Credit Card" checked>
+                                <label class="form-check-label" for="payment_credit_card">
+                                    <i class="far fa-credit-card me-2"></i>Credit Card
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="payment-method-card">
+                            <div class="form-check">
+                                <input class="form-check-input payment-method-radio" type="radio" name="payment_method" id="payment_paypal" value="PayPal">
+                                <label class="form-check-label" for="payment_paypal">
+                                    <i class="fab fa-paypal me-2"></i>PayPal
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="payment-method-card">
+                            <div class="form-check">
+                                <input class="form-check-input payment-method-radio" type="radio" name="payment_method" id="payment_bank_transfer" value="Bank Transfer">
+                                <label class="form-check-label" for="payment_bank_transfer">
+                                    <i class="fas fa-university me-2"></i>Bank Transfer
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="payment-method-card">
+                            <div class="form-check">
+                                <input class="form-check-input payment-method-radio" type="radio" name="payment_method" id="payment_cash_on_delivery" value="Cash on Delivery">
+                                <label class="form-check-label" for="payment_cash_on_delivery">
+                                    <i class="fas fa-money-bill-wave me-2"></i>Cash on Delivery
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="checkout-section">
+                    <h3 class="checkout-section-title">Additional Information</h3>
+                    
+                    <div class="mb-4">
+                        <label for="order_notes" class="form-label">Order Notes (optional)</label>
+                        <textarea class="form-control" id="order_notes" name="order_notes" rows="3" placeholder="Special instructions for delivery"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="order-summary">
+                    <h3 class="order-summary-title">Order Summary</h3>
+                    
+                    <div class="order-items">
+                        {% for item in selected_items %}
+                            <div class="order-item">
+                                {% if item.product.image %}
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="order-item-img">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/60x60?text=No+Image" alt="{{ item.product.name }}" class="order-item-img">
+                                {% endif %}
+                                
+                                <div class="order-item-details">
+                                    <h5 class="order-item-name">{{ item.product.name }}</h5>
+                                    <div class="order-item-price">${{ item.product.price }} <span class="order-item-quantity">x{{ item.quantity }}</span></div>
+                                </div>
+                                
+                                <div class="order-item-total">${{ item.total_price }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="order-total-section">
+                        <div class="order-total-row">
+                            <div class="order-total-label">Subtotal:</div>
+                            <div class="order-total-value">${{ selected_subtotal }}</div>
+                        </div>
+                        
+                        <div class="order-total-row">
+                            <div class="order-total-label">Shipping Fee:</div>
+                            <div class="order-total-value">$10.00</div>
+                        </div>
+                        
+                        {% if cart.active_voucher %}
+                            <div class="order-total-row">
+                                <div class="order-total-label">Discount:</div>
+                                <div class="order-total-value order-discount">-${{ cart.get_voucher_discount }}</div>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="order-total-row order-grand-total">
+                            <div class="order-total-label">Total:</div>
+                            <div class="order-total-value">
+                                {% with shipping_fee=10.00 %}
+                                    {% if cart.active_voucher %}
+                                        ${{ selected_subtotal|add:shipping_fee|add:cart.get_voucher_discount|floatformat:2 }}
+                                    {% else %}
+                                        ${{ selected_subtotal|add:shipping_fee|floatformat:2 }}
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-checkout">
+                        <i class="fas fa-lock me-2"></i>Complete Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle address selection
+        const addressRadios = document.querySelectorAll('.address-radio');
+        const addressDetailsDisplay = document.getElementById('address-details-display');
+        
+        // Get shipping addresses data as JSON from Django
+        const shippingAddresses = JSON.parse('{{ shipping_addresses_json|escapejs }}');
+        
+        function updateAddressDetails(addressId) {
+            // Find selected address
+            const selectedAddress = shippingAddresses.find(addr => addr.id == addressId);
+            
+            if (selectedAddress) {
+                // Update address details display
+                let addressHtml = `
+                    <p class="mb-1"><strong>${selectedAddress.name}</strong></p>
+                    <p class="mb-1">${selectedAddress.address1}</p>
+                `;
+                
+                if (selectedAddress.address2) {
+                    addressHtml += `<p class="mb-1">${selectedAddress.address2}</p>`;
+                }
+                
+                addressHtml += `
+                    <p class="mb-1">${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.postalCode}</p>
+                    <p class="mb-1">${selectedAddress.country}</p>
+                    <p class="mb-0">Phone: ${selectedAddress.phone}</p>
+                `;
+                
+                addressDetailsDisplay.innerHTML = addressHtml;
+                addressDetailsDisplay.classList.add('show');
+                
+                // Pre-fill phone number field with the selected address phone
+                const phoneNumberInput = document.getElementById('phone_number');
+                if (phoneNumberInput) {
+                    phoneNumberInput.value = selectedAddress.phone;
+                }
+            }
+        }
+        
+        // Set initial address details
+        const initialSelectedAddress = document.querySelector('.address-radio:checked');
+        if (initialSelectedAddress) {
+            updateAddressDetails(initialSelectedAddress.value);
+        }
+        
+        // Handle address selection change
+        addressRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Remove selected class from all address cards
+                document.querySelectorAll('.address-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                
+                // Add selected class to the selected address card
+                this.closest('.address-card').classList.add('selected');
+                
+                // Update address details
+                updateAddressDetails(this.value);
+            });
+        });
+        
+        // Handle payment method selection
+        const paymentMethodRadios = document.querySelectorAll('.payment-method-radio');
+        
+        paymentMethodRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Remove selected class from all payment method cards
+                document.querySelectorAll('.payment-method-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                
+                // Add selected class to the selected payment method card
+                this.closest('.payment-method-card').classList.add('selected');
+            });
+        });
+    });
+</script>
+{% endblock %} 

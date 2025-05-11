@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment - E-Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-container {
+        padding: 2rem 0;
+    }
+    .payment-title {
+        font-weight: 700;
+        margin-bottom: 2rem;
+    }
+    .payment-section {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .payment-section-title {
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .order-details {
+        margin-bottom: 1.5rem;
+    }
+    .order-number {
+        font-weight: 600;
+        color: #dc3545;
+    }
+    .order-date {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .shipping-address {
+        padding: 1rem;
+        border-radius: 5px;
+        background-color: #f8f9fa;
+        margin-bottom: 1.5rem;
+    }
+    .shipping-address h6 {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .order-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .order-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    .order-item-img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin-right: 1rem;
+    }
+    .order-item-details {
+        flex: 1;
+    }
+    .order-item-name {
+        font-weight: 500;
+        margin-bottom: 0.2rem;
+    }
+    .order-item-price {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .order-item-quantity {
+        margin-left: 0.5rem;
+        background-color: #f0f0f0;
+        padding: 0.2rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.8rem;
+    }
+    .order-item-total {
+        font-weight: 600;
+        margin-left: 1rem;
+    }
+    .order-summary {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    .order-summary-title {
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .order-total-section {
+        margin-top: 1.5rem;
+    }
+    .order-total-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.7rem;
+        font-size: 0.95rem;
+    }
+    .order-total-label {
+        color: #6c757d;
+    }
+    .order-total-value {
+        font-weight: 600;
+    }
+    .order-discount {
+        color: #28a745;
+    }
+    .order-grand-total {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e0e0e0;
+    }
+    .payment-method {
+        padding: 1rem;
+        border-radius: 5px;
+        background-color: #f8f9fa;
+        margin-bottom: 1.5rem;
+    }
+    .payment-card {
+        padding: 1rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    .card-info {
+        display: flex;
+        align-items: center;
+    }
+    .card-icon {
+        font-size: 2rem;
+        margin-right: 1rem;
+        color: #6c757d;
+    }
+    .card-details {
+        flex: 1;
+    }
+    .card-number {
+        font-weight: 600;
+    }
+    .card-holder {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .card-expiry {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .btn-payment {
+        background-color: #dc3545;
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.8rem 0;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 1.5rem;
+    }
+    .btn-payment:hover {
+        background-color: #c82333;
+    }
+    @media (max-width: 767px) {
+        .order-summary {
+            margin-top: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container payment-container">
+    <h1 class="payment-title">Payment</h1>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="payment-section">
+                <h4 class="payment-section-title">Order Details</h4>
+                
+                <div class="order-details">
+                    <div class="mb-3">
+                        <p class="mb-1">Order Number: <span class="order-number">{{ order.order_number }}</span></p>
+                        <p class="order-date">Placed on {{ order.created_at|date:"F j, Y, g:i a" }}</p>
+                    </div>
+                </div>
+                
+                <div class="shipping-address">
+                    <h6>Shipping Address</h6>
+                    <p class="mb-1">{{ order.shipping_address.name }}</p>
+                    <p class="mb-1">{{ order.shipping_address.address_line1 }}</p>
+                    {% if order.shipping_address.address_line2 %}
+                        <p class="mb-1">{{ order.shipping_address.address_line2 }}</p>
+                    {% endif %}
+                    <p class="mb-1">{{ order.shipping_address.city }}, {{ order.shipping_address.state }} {{ order.shipping_address.postal_code }}</p>
+                    <p class="mb-1">{{ order.shipping_address.country }}</p>
+                    <p class="mb-0">Phone: {{ order.shipping_address.phone_number }}</p>
+                </div>
+                
+                <h5 class="mb-3">Order Items</h5>
+                
+                <div class="order-items">
+                    {% for item in order.items.all %}
+                        <div class="order-item">
+                            {% if item.product.image %}
+                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="order-item-img">
+                            {% else %}
+                                <img src="https://via.placeholder.com/60x60?text=No+Image" alt="{{ item.product.name }}" class="order-item-img">
+                            {% endif %}
+                            
+                            <div class="order-item-details">
+                                <div class="order-item-name">{{ item.product.name }}</div>
+                                <div class="order-item-price">${{ item.price }} <span class="order-item-quantity">× {{ item.quantity }}</span></div>
+                            </div>
+                            
+                            <div class="order-item-total">${{ item.total_price }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="payment-section">
+                <h4 class="payment-section-title">Payment Method</h4>
+                
+                <div class="payment-method">
+                    <h6 class="mb-3">{{ order.payment_method }}</h6>
+                    
+                    {% if credit_card %}
+                        <div class="payment-card">
+                            <div class="card-info">
+                                <div class="card-icon">
+                                    <i class="far fa-credit-card"></i>
+                                </div>
+                                <div class="card-details">
+                                    <div class="card-number">{{ credit_card.masked_number }}</div>
+                                    <div class="card-holder">{{ credit_card.card_holder }}</div>
+                                    <div class="card-expiry">Expires {{ credit_card.expiry_date }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <form id="payment-form" method="post" action="{% url 'complete_payment' order.id %}">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="card_number" class="form-label">Card Number</label>
+                                    <input type="text" class="form-control" id="card_number" name="card_number" placeholder="1234 5678 9012 3456" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="card_holder" class="form-label">Card Holder</label>
+                                    <input type="text" class="form-control" id="card_holder" name="card_holder" placeholder="John Doe" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="expiry_month" class="form-label">Expiry Month</label>
+                                    <select class="form-select" id="expiry_month" name="expiry_month" required>
+                                        {% for i in '123456789101112'|make_list %}
+                                            <option value="{{ i }}">{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="expiry_year" class="form-label">Expiry Year</label>
+                                    <select class="form-select" id="expiry_year" name="expiry_year" required>
+                                        {% for i in '234567890'|make_list %}
+                                            <option value="202{{ i }}">202{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="cvv" class="form-label">CVV</label>
+                                    <input type="text" class="form-control" id="cvv" name="cvv" placeholder="123" required>
+                                </div>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="save_card" name="save_card" value="1">
+                                <label class="form-check-label" for="save_card">
+                                    Save this card for future purchases
+                                </label>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-payment">
+                                <i class="fas fa-lock me-2"></i>Complete Payment
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="order-summary">
+                <h4 class="order-summary-title">Order Summary</h4>
+                
+                <div class="order-total-section">
+                    <div class="order-total-row">
+                        <span class="order-total-label">Subtotal</span>
+                        <span class="order-total-value">${{ order.subtotal }}</span>
+                    </div>
+                    
+                    <div class="order-total-row">
+                        <span class="order-total-label">Shipping</span>
+                        <span class="order-total-value">${{ order.shipping_fee }}</span>
+                    </div>
+                    
+                    {% if order.voucher %}
+                    <div class="order-total-row">
+                        <span class="order-total-label">Discount ({{ order.voucher.code }})</span>
+                        <span class="order-total-value order-discount">-${{ order.voucher_discount }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="order-total-row order-grand-total">
+                        <span>Total</span>
+                        <span>${{ order.total_price }}</span>
+                    </div>
+                </div>
+                
+                {% if credit_card %}
+                <form method="post" action="{% url 'complete_payment' order.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="card_id" value="{{ credit_card.id }}">
+                    <button type="submit" class="btn btn-payment">
+                        <i class="fas fa-lock me-2"></i>Complete Payment
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

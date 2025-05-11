@@ -1,0 +1,426 @@
+{% extends 'base.html' %}
+{% load store_tags %}
+
+{% block title %}Notifications - E-Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notification-list {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    .notification-item {
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        border-left: 5px solid transparent;
+        margin-bottom: 20px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        position: relative;
+        overflow: hidden;
+        background: #fff;
+    }
+    .notification-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    .notification-item.unread {
+        border-left-color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.03);
+    }
+    .notification-item.unread::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 10px;
+        height: 10px;
+        background-color: #0d6efd;
+        border-radius: 50%;
+        margin: 14px;
+        animation: pulse 2s infinite;
+    }
+    .notification-item .badge {
+        font-size: 0.75rem;
+        padding: 5px 10px;
+        border-radius: 30px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+    }
+    .notification-item .time {
+        font-size: 0.825rem;
+        color: #6c757d;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        margin-top: 4px;
+    }
+    .notification-item .time i {
+        margin-right: 5px;
+        font-size: 0.75rem;
+    }
+    .notification-type-order {
+        background-color: #0dcaf0;
+        color: #fff;
+    }
+    .notification-type-payment {
+        background-color: #198754;
+        color: #fff;
+    }
+    .notification-type-system {
+        background-color: #dc3545;
+        color: #fff;
+    }
+    .notification-type-promo {
+        background-color: #fd7e14;
+        color: #fff;
+    }
+    .notification-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        margin-right: 14px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+    }
+    .notification-icon i {
+        font-size: 1.1rem;
+    }
+    .notification-title {
+        font-weight: 600;
+        color: #333;
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    .notification-title-text {
+        font-size: 1.05rem;
+        margin-bottom: 4px;
+    }
+    .notification-content {
+        padding: 20px;
+    }
+    .notification-message {
+        color: #555;
+        margin-bottom: 20px;
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+    .notification-actions {
+        display: flex;
+        gap: 12px;
+    }
+    .notification-actions .btn {
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-weight: 500;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        transition: all 0.2s ease;
+    }
+    .notification-actions .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+    }
+    .notification-actions .btn i {
+        margin-right: 6px;
+    }
+    .notification-empty {
+        text-align: center;
+        padding: 80px 0;
+        color: #6c757d;
+        background-color: #f8f9fa;
+        border-radius: 12px;
+        margin-top: 20px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.05);
+    }
+    .notification-empty i {
+        font-size: 3rem;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+    .notification-empty h4 {
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+    .notification-toolbar {
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        background-color: #f8f9fa;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .notification-toolbar .count {
+        font-weight: 600;
+        color: #0d6efd;
+    }
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+    .notification-header h1 {
+        font-weight: 700;
+        color: #333;
+        font-size: 2rem;
+    }
+    .notification-badge {
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        box-shadow: 0 3px 8px rgba(13, 110, 253, 0.2);
+    }
+    .btn-mark-read {
+        transition: all 0.2s ease;
+        font-weight: 500;
+        padding: 8px 16px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .btn-mark-read:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .notification-new {
+        animation: fadeInUp 0.6s ease-out;
+    }
+    .notification-date-group {
+        margin: 30px 0 15px 0;
+        position: relative;
+        text-align: center;
+    }
+    .notification-date-group::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background-color: #dee2e6;
+        z-index: 1;
+    }
+    .notification-date-group span {
+        background-color: #f8f9fa;
+        padding: 5px 15px;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #6c757d;
+        position: relative;
+        z-index: 2;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    @keyframes pulse {
+        0% {
+            opacity: 0.6;
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4);
+        }
+        50% {
+            opacity: 1;
+            transform: scale(1.2);
+            box-shadow: 0 0 0 6px rgba(13, 110, 253, 0);
+        }
+        100% {
+            opacity: 0.6;
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+        }
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .notification-item .time {
+            display: block;
+            margin-top: 4px;
+            width: 100%;
+            text-align: left;
+        }
+        .notification-title {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .notification-actions {
+            flex-wrap: wrap;
+        }
+        .notification-actions .btn {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="notification-list">
+        <div class="notification-header">
+            <h1><i class="fas fa-bell me-3"></i>Notifications</h1>
+            {% if unread_notifications_count > 0 %}
+            <span class="notification-badge bg-primary">{{ unread_notifications_count }} New</span>
+            {% endif %}
+        </div>
+        
+        <div class="notification-toolbar">
+            <div>
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-list-ul me-2"></i>
+                    <span>Total: <span class="count">{{ page_obj.paginator.count }}</span> Notifications</span>
+                </div>
+            </div>
+            <div>
+                {% if unread_notifications_count > 0 %}
+                <a href="{% url 'mark_all_notifications_read' %}" class="btn btn-primary btn-mark-read">
+                    <i class="fas fa-check-double me-1"></i>Mark All as Read
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if page_obj %}
+            <div class="notification-items">
+                {% for notification in page_obj %}
+                    {% if forloop.first or notification.created_at.date != previous_date %}
+                    <div class="notification-date-group">
+                        <span>
+                            {% if notification.created_at.date == today %}
+                                Today
+                            {% elif notification.created_at.date == yesterday %}
+                                Yesterday
+                            {% else %}
+                                {{ notification.created_at|date:"F d, Y" }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+                    {% set_var notification.created_at.date as previous_date %}
+                
+                    <div class="card notification-item {% if not notification.is_read %}unread notification-new{% endif %}">
+                        <div class="notification-content">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="notification-title">
+                                    <div class="notification-icon notification-type-{{ notification.notification_type }}">
+                                        {% if notification.notification_type == 'order' %}
+                                            <i class="fas fa-shopping-bag"></i>
+                                        {% elif notification.notification_type == 'payment' %}
+                                            <i class="fas fa-credit-card"></i>
+                                        {% elif notification.notification_type == 'system' %}
+                                            <i class="fas fa-cogs"></i>
+                                        {% elif notification.notification_type == 'promo' %}
+                                            <i class="fas fa-gift"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="notification-title-text">{{ notification.title }}</div>
+                                        {% if not notification.is_read %}
+                                        <span class="badge bg-primary ms-1">New</span>
+                                        {% endif %}
+                                        <div class="time">
+                                            <i class="far fa-clock"></i>
+                                            {{ notification.created_at|date:"M d, Y" }} at {{ notification.created_at|time:"H:i" }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="notification-message">{{ notification.message }}</div>
+                            
+                            <div class="notification-actions">
+                                {% if notification.link %}
+                                    <a href="{{ notification.link }}" class="btn btn-primary">
+                                        <i class="fas fa-eye"></i>View Details
+                                    </a>
+                                {% endif %}
+                                
+                                {% if not notification.is_read %}
+                                    <a href="{% url 'mark_notification_read' notification.id %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-check"></i>Mark as Read
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Notification pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" tabindex="-1" aria-disabled="true">Previous</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+        {% else %}
+            <div class="notification-empty">
+                <i class="far fa-bell-slash"></i>
+                <h4>No Notifications</h4>
+                <p>You don't have any notifications yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add current date info to template
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(today.getDate() - 1);
+        
+        // Notification count badge animation
+        const badge = document.querySelector('.notification-badge');
+        if (badge) {
+            setTimeout(() => {
+                badge.classList.add('animate__animated', 'animate__pulse');
+            }, 1000);
+        }
+    });
+</script>
+{% endblock %} 

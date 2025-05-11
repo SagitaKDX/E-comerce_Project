@@ -1,0 +1,167 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}Quick Response Templates{% endblock %}
+
+{% block extra_css %}
+<style>
+    .response-card {
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border-radius: 10px;
+    }
+    
+    .response-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        background-color: #f8f9fa;
+    }
+    
+    .category-card {
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .category-header {
+        font-weight: 600;
+        font-size: 1.1rem;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .clipboard-notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        background-color: #198754;
+        color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        display: none;
+        z-index: 1050;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Quick Response Templates</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'livechat:agent_dashboard' %}">Live Chat Support</a></li>
+        <li class="breadcrumb-item active">Quick Responses</li>
+    </ol>
+    
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-comment-dots me-1"></i>
+                        Response Templates
+                    </div>
+                    <button type="button" class="btn btn-sm btn-primary" disabled>
+                        <i class="fas fa-plus me-1"></i> Add New Template
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        Click on any response template to copy it to your clipboard. You can then paste it directly into any chat conversation.
+                    </p>
+                    
+                    <div class="row">
+                        {% for category in response_categories %}
+                        <div class="col-md-6">
+                            <div class="card category-card">
+                                <div class="card-body">
+                                    <div class="category-header">
+                                        <i class="fas fa-folder me-2"></i> {{ category.name }}
+                                    </div>
+                                    {% for response in category.responses %}
+                                    <div class="card response-card mb-2" onclick="copyToClipboard('{{ response.text }}')">
+                                        <div class="card-body py-2 px-3">
+                                            <p class="mb-0">{{ response.text }}</p>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Quick Response Tips
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h5>Personalize your responses</h5>
+                        <p>Add customer names and specific details to make your responses feel more personal.</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h5>Combine templates</h5>
+                        <p>You can use multiple templates in a single conversation - for example, a greeting followed by a technical question.</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h5>Edit as needed</h5>
+                        <p>Templates are starting points. Customize them to better address the customer's specific needs.</p>
+                    </div>
+                    
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-lightbulb me-2"></i> Quick responses help improve efficiency, but remember to keep your conversations natural and personalized.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Future feature: Custom Templates -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-star me-1"></i>
+                    Your Custom Templates
+                </div>
+                <div class="card-body text-center py-4">
+                    <i class="fas fa-folder-plus display-4 text-muted mb-3"></i>
+                    <h5>No Custom Templates Yet</h5>
+                    <p class="text-muted">This feature will allow you to create and save your own custom response templates.</p>
+                    <button class="btn btn-outline-primary" disabled>
+                        <i class="fas fa-plus-circle me-1"></i> Create Template
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clipboard notification -->
+<div id="clipboard-notification" class="clipboard-notification">
+    <i class="fas fa-check-circle me-2"></i> Copied to clipboard!
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyToClipboard(text) {
+    // Copy text to clipboard
+    navigator.clipboard.writeText(text).then(function() {
+        // Show notification
+        const notification = document.getElementById('clipboard-notification');
+        notification.style.display = 'block';
+        
+        // Hide notification after 2 seconds
+        setTimeout(function() {
+            notification.style.display = 'none';
+        }, 2000);
+    });
+}
+</script>
+{% endblock %} 

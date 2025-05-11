@@ -1,0 +1,522 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order #{{ order.id }} - E-Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .order-detail-container {
+        padding: 2rem 0;
+    }
+    .order-header {
+        margin-bottom: 2rem;
+    }
+    .order-title {
+        font-weight: 700;
+    }
+    .order-date {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .order-status {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-top: 0.5rem;
+    }
+    .status-pending {
+        background-color: #ffeeba;
+        color: #856404;
+    }
+    .status-processing {
+        background-color: #b8daff;
+        color: #004085;
+    }
+    .status-shipped {
+        background-color: #c3e6cb;
+        color: #155724;
+    }
+    .status-delivered {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-cancelled {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .order-card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .card-title {
+        font-weight: 600;
+        margin-bottom: 1.2rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .info-row {
+        display: flex;
+        margin-bottom: 0.8rem;
+    }
+    .info-label {
+        min-width: 150px;
+        color: #6c757d;
+    }
+    .info-value {
+        font-weight: 500;
+    }
+    .address-card {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 5px;
+    }
+    .order-items-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .order-items-table th {
+        padding: 0.8rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        font-weight: 600;
+        color: #495057;
+        text-align: left;
+    }
+    .order-items-table td {
+        padding: 1rem 0.8rem;
+        border-bottom: 1px solid #f0f0f0;
+        vertical-align: middle;
+    }
+    .order-items-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .item-product {
+        display: flex;
+        align-items: center;
+    }
+    .item-image {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin-right: 1rem;
+    }
+    .item-title {
+        font-weight: 500;
+        margin-bottom: 0;
+    }
+    
+    /* Package Styles */
+    .package-items-card {
+        background-color: #f8f9fa;
+    }
+    .package-container {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        padding: 1rem;
+    }
+    .package-container:last-child {
+        margin-bottom: 0;
+    }
+    .package-header {
+        padding-bottom: 0.8rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .package-header h4 {
+        font-weight: 600;
+        color: #007bff;
+    }
+    .package-price {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #28a745;
+    }
+    .package-container .order-items-table {
+        margin-top: 0.5rem;
+    }
+    .package-container .table-responsive {
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    .package-container tfoot td {
+        background-color: #f8f9fa;
+        font-weight: 500;
+        border-top: 1px solid #dee2e6;
+    }
+    .package-container tfoot .text-success {
+        font-weight: 700;
+    }
+    .package-description {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .order-summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.7rem;
+        font-size: 0.95rem;
+    }
+    .order-summary-label {
+        color: #6c757d;
+    }
+    .order-summary-value {
+        font-weight: 600;
+    }
+    .order-discount {
+        color: #28a745;
+    }
+    .order-total {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e0e0e0;
+    }
+    .btn-order-action {
+        margin-top: 1rem;
+    }
+    .order-timeline {
+        position: relative;
+        padding-left: 40px;
+        margin-top: 1.5rem;
+    }
+    .timeline-item {
+        position: relative;
+        padding-bottom: 2rem;
+    }
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: -40px;
+        top: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #e0e0e0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.8rem;
+    }
+    .timeline-marker.active {
+        background-color: #28a745;
+    }
+    .timeline-marker i {
+        font-size: 0.7rem;
+    }
+    .timeline-line {
+        position: absolute;
+        left: -30px;
+        top: 20px;
+        bottom: 0;
+        width: 1px;
+        background-color: #e0e0e0;
+    }
+    .timeline-date {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin-bottom: 0.3rem;
+    }
+    .timeline-title {
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+    }
+    .timeline-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    @media (max-width: 767.98px) {
+        .info-row {
+            flex-direction: column;
+            margin-bottom: 1.2rem;
+        }
+        .info-label {
+            margin-bottom: 0.3rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container order-detail-container">
+    <div class="order-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h1 class="order-title">Order #{{ order.id }}</h1>
+                <div class="order-date">Placed on {{ order.created_at|date:"F j, Y, g:i a" }}</div>
+                <div class="order-status status-{{ order.status|lower }}">
+                    {{ order.get_status_display }}
+                </div>
+            </div>
+            
+            {% if order.status == 'pending' %}
+            <div>
+                <form method="post" action="{% url 'cancel_order' order.id %}" onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times-circle me-2"></i>Cancel Order
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+            <div class="mt-3">
+                <a href="{% url 'order_bill' order.id %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-print me-1"></i> Print Bill
+                </a>
+                <!-- Add other action buttons here if needed, e.g., Reorder -->
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="order-card">
+                <h3 class="card-title">Order Items</h3>
+                <div class="table-responsive">
+                    <table class="order-items-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%">Product</th>
+                                <th style="width: 15%">Price</th>
+                                <th style="width: 15%">Quantity</th>
+                                <th style="width: 20%">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items.all %}
+                                <tr>
+                                    <td>
+                                        <div class="item-product">
+                                            {% if item.product.image %}
+                                                <img src="{{ item.product.image.url }}" class="item-image">
+                                            {% else %}
+                                                <img src="{% static 'img/no-image.png' %}" class="item-image">
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="item-title">{{ item.product.name }}</h6>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>${{ item.price|floatformat:2 }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>${{ item.total_price|floatformat:2 }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            {% if order.packages.exists %}
+            <div class="order-card package-items-card">
+                <h3 class="card-title">Package Items</h3>
+                {% for order_package in order.packages.all %}
+                    <div class="package-container mb-4">
+                        <div class="package-header d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0">{{ order_package.package.name }}</h4>
+                            <span class="package-price">${{ order_package.price|floatformat:2 }}</span>
+                        </div>
+                        <div class="package-description text-muted mb-3 mt-2">
+                            {{ order_package.package.description|truncatechars:150 }}
+                        </div>
+                        <div class="table-responsive">
+                            <table class="order-items-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50%">Product</th>
+                                        <th style="width: 15%">Price</th>
+                                        <th style="width: 15%">Quantity</th>
+                                        <th style="width: 20%">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in order_package.items.all %}
+                                        <tr>
+                                            <td>
+                                                <div class="item-product">
+                                                    {% if item.product.image %}
+                                                        <img src="{{ item.product.image.url }}" class="item-image">
+                                                    {% else %}
+                                                        <img src="{% static 'img/no-image.png' %}" class="item-image">
+                                                    {% endif %}
+                                                    <div>
+                                                        <h6 class="item-title">{{ item.product.name }}</h6>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>${{ item.price|floatformat:2 }}</td>
+                                            <td>{{ item.quantity }}</td>
+                                            <td>${{ item.total_price|floatformat:2 }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Package savings:</strong></td>
+                                        <td class="text-success">-${{ order_package.package.discount_amount|floatformat:2 }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="order-card">
+                <h3 class="card-title">Shipping Information</h3>
+                
+                <div class="info-row">
+                    <div class="info-label">Recipient:</div>
+                    <div class="info-value">{{ order.shipping_address.name }}</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">Phone:</div>
+                    <div class="info-value">{{ order.phone_number }}</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">Address:</div>
+                    <div class="info-value address-card">
+                        <p class="mb-1">{{ order.shipping_address.address_line1 }}</p>
+                        {% if order.shipping_address.address_line2 %}
+                            <p class="mb-1">{{ order.shipping_address.address_line2 }}</p>
+                        {% endif %}
+                        <p class="mb-1">{{ order.shipping_address.city }}, {{ order.shipping_address.state }} {{ order.shipping_address.postal_code }}</p>
+                        <p class="mb-0">{{ order.shipping_address.country }}</p>
+                    </div>
+                </div>
+                
+                {% if order.order_notes %}
+                <div class="info-row">
+                    <div class="info-label">Order Notes:</div>
+                    <div class="info-value">{{ order.order_notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="order-card">
+                <h3 class="card-title">Payment Information</h3>
+                
+                <div class="info-row">
+                    <div class="info-label">Payment Method:</div>
+                    <div class="info-value">{{ order.payment_method }}</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">Payment Status:</div>
+                    <div class="info-value">
+                        {% if order.payment_status %}
+                        <span class="badge bg-success">Paid</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">Unpaid</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if not order.payment_status and order.status != 'cancelled' %}
+                <div class="btn-order-action">
+                    <a href="{% url 'payment' order.id %}" class="btn btn-primary">
+                        <i class="fas fa-credit-card me-2"></i>Complete Payment
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="order-card">
+                <h3 class="card-title">Order Summary</h3>
+                
+                <div class="order-summary-row">
+                    <span class="order-summary-label">Subtotal:</span>
+                    <span class="order-summary-value">${{ order.subtotal }}</span>
+                </div>
+                
+                <div class="order-summary-row">
+                    <span class="order-summary-label">Shipping:</span>
+                    <span class="order-summary-value">${{ order.shipping_fee }}</span>
+                </div>
+                
+                {% if order.voucher %}
+                <div class="order-summary-row">
+                    <span class="order-summary-label">Discount ({{ order.voucher.code }}):</span>
+                    <span class="order-summary-value order-discount">-${{ order.voucher_discount }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="order-summary-row order-total">
+                    <span>Total:</span>
+                    <span>${{ order.total_price }}</span>
+                </div>
+            </div>
+            
+            <div class="order-card">
+                <h3 class="card-title">Order Status</h3>
+                
+                <div class="order-timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker active">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="timeline-line"></div>
+                        <div class="timeline-date">{{ order.created_at|date:"F j, Y, g:i a" }}</div>
+                        <div class="timeline-title">Order Placed</div>
+                        <div class="timeline-description">Your order has been placed successfully.</div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}active{% endif %}">
+                            {% if order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}
+                            <i class="fas fa-check"></i>
+                            {% endif %}
+                        </div>
+                        <div class="timeline-line"></div>
+                        <div class="timeline-title">Processing</div>
+                        <div class="timeline-description">Your order is being processed.</div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if order.status == 'shipped' or order.status == 'delivered' %}active{% endif %}">
+                            {% if order.status == 'shipped' or order.status == 'delivered' %}
+                            <i class="fas fa-check"></i>
+                            {% endif %}
+                        </div>
+                        <div class="timeline-line"></div>
+                        <div class="timeline-title">Shipped</div>
+                        <div class="timeline-description">Your order has been shipped.</div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if order.status == 'delivered' %}active{% endif %}">
+                            {% if order.status == 'delivered' %}
+                            <i class="fas fa-check"></i>
+                            {% endif %}
+                        </div>
+                        <div class="timeline-title">Delivered</div>
+                        <div class="timeline-description">Your order has been delivered.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="order-card">
+                <h3 class="card-title">Need Help?</h3>
+                <p>If you have any questions regarding your order, please contact our customer support.</p>
+                <a href="#" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-headset me-2"></i>Contact Support
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

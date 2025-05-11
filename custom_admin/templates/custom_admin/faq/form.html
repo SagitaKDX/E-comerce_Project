@@ -1,0 +1,196 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<style>
+    .CodeMirror {
+        height: 400px;
+    }
+    .editor-preview-side {
+        background: #f8f9fa;
+        padding: 20px;
+    }
+    .editor-toolbar {
+        background: #f8f9fa;
+    }
+    .debug-info {
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{{ title }}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:faq_list' %}">FAQs</a></li>
+        <li class="breadcrumb-item active">{{ title }}</li>
+    </ol>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-edit me-1"></i>
+            {{ title }}
+        </div>
+        <div class="card-body">
+            <!-- Debug Information -->
+            <div class="debug-info">
+                <h5>Form Information:</h5>
+                <p><strong>Request Method:</strong> {{ request.method }}</p>
+                <p><strong>Form Errors:</strong> {% if form.errors %}Yes (see below){% else %}None{% endif %}</p>
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <h6>Form Errors:</h6>
+                        <ul>
+                            {% for field, errors in form.errors.items %}
+                                <li><strong>{{ field }}:</strong> {{ errors|join:", " }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <form method="post" id="faqForm">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.title.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.content.id_for_label }}" class="form-label">{{ form.content.label }}</label>
+                    {{ form.content }}
+                    {% if form.content.help_text %}
+                        <div class="form-text">{{ form.content.help_text }}</div>
+                    {% endif %}
+                    {% if form.content.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.content.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.order.id_for_label }}" class="form-label">{{ form.order.label }}</label>
+                            {{ form.order }}
+                            {% if form.order.help_text %}
+                                <div class="form-text">{{ form.order.help_text }}</div>
+                            {% endif %}
+                            {% if form.order.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.order.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3 mt-4">
+                            <div class="form-check form-switch">
+                                {{ form.is_published }}
+                                <label class="form-check-label" for="{{ form.is_published.id_for_label }}">
+                                    {{ form.is_published.label }}
+                                </label>
+                            </div>
+                            {% if form.is_published.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.is_published.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">{{ submit_text }}</button>
+                    <a href="{% url 'admin_dashboard:faq_list' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let easyMDE;
+        try {
+            const editorElement = document.getElementById('markdown-editor');
+            
+            if (!editorElement) {
+                console.error('Markdown editor element not found');
+                // Fallback to regular textarea if element not found
+                return;
+            }
+            
+            easyMDE = new EasyMDE({
+                element: editorElement,
+                autofocus: true,
+                spellChecker: false,
+                status: ["autosave", "lines", "words", "cursor"],
+                previewClass: ['editor-preview', 'markdown-body'],
+                toolbar: [
+                    "bold", "italic", "heading", "|", 
+                    "quote", "unordered-list", "ordered-list", "|", 
+                    "link", "image", "table", "|",
+                    "preview", "side-by-side", "fullscreen", "|",
+                    "guide"
+                ]
+            });
+            
+            // Debug form submission
+            const form = document.getElementById('faqForm');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (form && submitBtn) {
+                submitBtn.addEventListener('click', function(e) {
+                    console.log('Submit button clicked');
+                    // Make sure the editor content is synced to the textarea before submission
+                    if (easyMDE) {
+                        easyMDE.codemirror.save();
+                    }
+                });
+                
+                form.addEventListener('submit', function(e) {
+                    console.log('Form submitted');
+                });
+            }
+        } catch (error) {
+            console.error('Error initializing Markdown editor:', error);
+        }
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,15 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="admin-highlight-box" style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px; border-left: 4px solid #417690;">
+    <h3 style="margin-top: 0; color: #417690;">Voucher Management</h3>
+    <p>Create and manage vouchers for your store. Learn how to use different voucher types:</p>
+    <div style="margin-top: 10px;">
+        <a href="{% url 'voucher_guide' %}" class="button" style="background: #417690; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px;">View Voucher Guide</a>
+        <a href="{% url 'admin:store_voucher_add' %}" class="button" style="background: #79aec8; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; margin-left: 10px;">Add New Voucher</a>
+    </div>
+</div>
+
+{{ block.super }}
+{% endblock %} 

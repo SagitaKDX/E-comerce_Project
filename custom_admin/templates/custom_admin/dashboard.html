@@ -1,0 +1,552 @@
+{% extends 'custom_admin/base.html' %}
+
+{% block title %}Dashboard - E-Shop Admin{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Stats Cards -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2 stats-card fade-in">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Products</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ product_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-box fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2 stats-card fade-in" style="animation-delay: 0.1s;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Orders</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ order_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2 stats-card fade-in" style="animation-delay: 0.2s;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Customers</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ customer_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2 stats-card fade-in" style="animation-delay: 0.3s;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Total Revenue</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_revenue|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row">
+    <!-- Sales Chart -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4 fade-in" style="animation-delay: 0.4s;">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Sales Overview</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pie Chart -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4 fade-in" style="animation-delay: 0.5s;">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Product Categories</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-pie">
+                    <canvas id="categoryPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Popular Products and Recent Orders Row -->
+<div class="row">
+    <!-- Popular Products -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4 fade-in" style="animation-delay: 0.6s;">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Popular Products</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Product ID</th>
+                                <th>Product Name</th>
+                                <th>Orders</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in popular_products %}
+                            <tr>
+                                <td>#{{ product.id }}</td>
+                                <td>{{ product.name }}</td>
+                                <td>{{ product.order_count }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center">No popular products found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4 fade-in" style="animation-delay: 0.7s;">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Orders</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Status</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td><a href="{% url 'admin_dashboard:admin_order_detail' order.id %}">#{{ order.id }}</a></td>
+                                <td>{{ order.user.username }}</td>
+                                <td>
+                                    {% if order.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% elif order.status == 'processing' %}
+                                        <span class="badge bg-info">Processing</span>
+                                    {% elif order.status == 'shipped' %}
+                                        <span class="badge bg-primary">Shipped</span>
+                                    {% elif order.status == 'delivered' %}
+                                        <span class="badge bg-success">Delivered</span>
+                                    {% elif order.status == 'cancelled' %}
+                                        <span class="badge bg-danger">Cancelled</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ order.status|title }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ order.items.all|length }}</td>
+                                <td>${{ order.total_price|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No recent orders found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Access Section -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card shadow fade-in" style="animation-delay: 0.8s;">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Access</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card bg-primary text-white shadow">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="text-white-50 small">Manage Products</div>
+                                        <div class="h5 mb-0 font-weight-bold">Products</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-box fa-2x text-white-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between">
+                                <a class="small text-white stretched-link" href="{% url 'admin_dashboard:admin_products' %}">View Details</a>
+                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card bg-success text-white shadow">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="text-white-50 small">Process Orders</div>
+                                        <div class="h5 mb-0 font-weight-bold">Orders</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-shopping-cart fa-2x text-white-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between">
+                                <a class="small text-white stretched-link" href="{% url 'admin_dashboard:admin_orders' %}">View Details</a>
+                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card bg-info text-white shadow">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="text-white-50 small">Customer Management</div>
+                                        <div class="h5 mb-0 font-weight-bold">Users</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-users fa-2x text-white-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between">
+                                <a class="small text-white stretched-link" href="{% url 'admin_dashboard:admin_users' %}">View Details</a>
+                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card bg-warning text-white shadow">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="text-white-50 small">Loyalty Program</div>
+                                        <div class="h5 mb-0 font-weight-bold">Loyalty</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-award fa-2x text-white-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between">
+                                <a class="small text-white stretched-link" href="{% url 'admin_dashboard:loyalty_dashboard' %}">View Details</a>
+                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Chart.js initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize any Bootstrap dropdowns
+    var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+    dropdownElementList.map(function(dropdownToggleEl) {
+        return new bootstrap.Dropdown(dropdownToggleEl);
+    });
+    
+    // Helper functions for loading indicators
+    function showLoading(containerId) {
+        const container = document.getElementById(containerId);
+        const loadingHtml = `
+            <div class="chart-loading-container">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading chart data...</p>
+            </div>
+        `;
+        
+        // Add loading indicator
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'chart-loading-container';
+        loadingDiv.innerHTML = loadingHtml;
+        container.parentNode.appendChild(loadingDiv);
+    }
+    
+    function hideLoading(containerId) {
+        const container = document.getElementById(containerId).parentNode;
+        const loadingDiv = container.querySelector('.chart-loading-container');
+        if (loadingDiv) {
+            container.removeChild(loadingDiv);
+        }
+    }
+    
+    function showError(containerId, message) {
+        const container = document.getElementById(containerId).parentNode;
+        const errorHtml = `
+            <div class="chart-error-container">
+                <i class="fas fa-exclamation-circle text-danger mb-3" style="font-size: 2.5rem;"></i>
+                <p class="text-danger">${message}</p>
+            </div>
+        `;
+        
+        // Remove loading indicator if exists
+        hideLoading(containerId);
+        
+        // Add error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'chart-error-container';
+        errorDiv.innerHTML = errorHtml;
+        container.appendChild(errorDiv);
+    }
+
+    // Sales Chart
+    showLoading('salesChart');
+    fetch('{% url "admin_dashboard:admin_chart_data" %}?type=sales&period=monthly')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.labels || !data.values || data.labels.length === 0) {
+                throw new Error('No data available for the selected period');
+            }
+            
+            hideLoading('salesChart');
+            const salesCtx = document.getElementById('salesChart').getContext('2d');
+            new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Sales ($)',
+                        data: data.values,
+                        backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                        borderColor: 'rgba(78, 115, 223, 1)',
+                        pointRadius: 3,
+                        pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                        pointBorderColor: 'rgba(78, 115, 223, 1)',
+                        pointHoverRadius: 5,
+                        pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                        pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                        pointHitRadius: 10,
+                        pointBorderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            left: 10,
+                            right: 25,
+                            top: 25,
+                            bottom: 0
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: "rgb(234, 236, 244)",
+                                zeroLineColor: "rgb(234, 236, 244)",
+                                drawBorder: false,
+                                borderDash: [2],
+                                zeroLineBorderDash: [2]
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return "$" + value.toLocaleString();
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                maxTicksLimit: 7
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: "rgb(255, 255, 255)",
+                            bodyColor: "#858796",
+                            titleMarginBottom: 10,
+                            titleColor: '#6e707e',
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            borderColor: '#dddfeb',
+                            borderWidth: 1,
+                            padding: 15,
+                            displayColors: false,
+                            intersect: false,
+                            mode: 'index',
+                            caretPadding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    return "Sales: $" + context.raw.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching sales data:', error);
+            showError('salesChart', error.message || 'Could not load sales data');
+        });
+    
+    // Categories Pie Chart
+    showLoading('categoryPieChart');
+    fetch('{% url "admin_dashboard:admin_chart_data" %}?type=categories')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.labels || !data.values || data.labels.length === 0) {
+                throw new Error('No data available for categories');
+            }
+            
+            hideLoading('categoryPieChart');
+            const pieCtx = document.getElementById('categoryPieChart').getContext('2d');
+            
+            // Generate vibrant colors
+            const colorSet = [
+                ['rgba(78, 115, 223, 0.8)', 'rgba(78, 115, 223, 1)'],
+                ['rgba(28, 200, 138, 0.8)', 'rgba(28, 200, 138, 1)'],
+                ['rgba(54, 185, 204, 0.8)', 'rgba(54, 185, 204, 1)'],
+                ['rgba(246, 194, 62, 0.8)', 'rgba(246, 194, 62, 1)'],
+                ['rgba(231, 74, 59, 0.8)', 'rgba(231, 74, 59, 1)'],
+                ['rgba(104, 109, 224, 0.8)', 'rgba(104, 109, 224, 1)'],
+                ['rgba(77, 208, 225, 0.8)', 'rgba(77, 208, 225, 1)'],
+                ['rgba(255, 177, 66, 0.8)', 'rgba(255, 177, 66, 1)'],
+                ['rgba(255, 107, 107, 0.8)', 'rgba(255, 107, 107, 1)']
+            ];
+            
+            const backgroundColors = [];
+            const hoverBackgroundColors = [];
+            
+            // Map colors to datasets
+            for (let i = 0; i < data.labels.length; i++) {
+                const colorIndex = i % colorSet.length;
+                backgroundColors.push(colorSet[colorIndex][0]);
+                hoverBackgroundColors.push(colorSet[colorIndex][1]);
+            }
+            
+            new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.values,
+                        backgroundColor: backgroundColors,
+                        hoverBackgroundColor: hoverBackgroundColors,
+                        hoverBorderColor: "rgba(234, 236, 244, 1)",
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: "rgb(255, 255, 255)",
+                            bodyColor: "#858796",
+                            borderColor: '#dddfeb',
+                            borderWidth: 1,
+                            padding: 15,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label;
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching category data:', error);
+            showError('categoryPieChart', error.message || 'Could not load category data');
+        });
+});
+</script>
+{% endblock %}

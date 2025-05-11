@@ -1,0 +1,241 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+{% load custom_tags %}
+
+{% block extra_head %}
+<style>
+    .user-selection {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 15px;
+    }
+    
+    .user-item {
+        padding: 8px;
+        border-radius: 4px;
+        margin-bottom: 4px;
+        transition: background-color 0.2s;
+    }
+    
+    .user-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .user-checkbox {
+        margin-right: 10px;
+    }
+    
+    .search-box {
+        position: sticky;
+        top: 0;
+        background-color: white;
+        padding: 10px 0;
+        z-index: 100;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .voucher-card {
+        margin-bottom: 15px;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    
+    .voucher-card .card-header {
+        font-weight: 600;
+    }
+    
+    .assigned-users {
+        margin-top: 10px;
+        font-size: 0.9rem;
+    }
+    
+    .assigned-users span {
+        display: inline-block;
+        background-color: #e2e3e5;
+        border-radius: 30px;
+        padding: 2px 8px;
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
+    
+    .user-count-badge {
+        float: right;
+        background-color: #6c757d;
+        color: white;
+        padding: 0.25em 0.5em;
+        border-radius: 0.25rem;
+        font-size: 0.75em;
+    }
+    
+    .btn-select-all-users {
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Assign Vouchers to Users</h1>
+        <a href="{% url 'admin_dashboard:admin_vouchers' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Vouchers
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Selected Vouchers</h6>
+                </div>
+                <div class="card-body">
+                    {% for voucher in vouchers %}
+                    <div class="voucher-card card border-left-primary">
+                        <div class="card-body py-3">
+                            <div class="d-flex justify-content-between">
+                                <h5 class="card-title">{{ voucher.code }}</h5>
+                                <div>
+                                    {% if voucher.discount_type == 'percentage' %}
+                                    <span class="badge bg-info">{{ voucher.discount_value }}% off</span>
+                                    {% else %}
+                                    <span class="badge bg-info">${{ voucher.discount_value }} off</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="text-muted small">
+                                Valid: {{ voucher.valid_from|date:"M d, Y" }} - {{ voucher.valid_to|date:"M d, Y" }}
+                            </div>
+                            
+                            {% if user_assignments and voucher.id in user_assignments %}
+                            <div class="assigned-users">
+                                <div class="text-muted mb-1">Currently assigned to:</div>
+                                {% for username in user_assignments|get_item:voucher.id %}
+                                <span>{{ username }}</span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-muted mt-2">
+                                <i class="fas fa-info-circle"></i> This voucher is not assigned to any users yet.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="alert alert-warning">
+                        No vouchers selected for assignment.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        Select Users
+                        <span class="user-count-badge">{{ users.count }} Users</span>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Voucher Message</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label for="voucher_message">Personalized Message</label>
+                                    <textarea class="form-control" id="voucher_message" name="voucher_message" rows="3" placeholder="Enter a personalized message for the users receiving this voucher...">You have received a special voucher!</textarea>
+                                    <small class="form-text text-muted">This message will be displayed in the user's notifications and on their voucher.</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-outline-secondary btn-select-all-users" id="selectAllUsers">
+                            <i class="fas fa-check-square"></i> Select All Users
+                        </button>
+                        
+                        <div class="user-selection">
+                            <div class="search-box">
+                                <input type="text" class="form-control" id="userSearchInput" placeholder="Search users...">
+                            </div>
+                            
+                            {% for user in users %}
+                            <div class="user-item">
+                                <div class="form-check">
+                                    <input class="form-check-input user-checkbox" type="checkbox" name="users" value="{{ user.id }}" id="user_{{ user.id }}">
+                                    <label class="form-check-label w-100" for="user_{{ user.id }}">
+                                        <div>{{ user.username }}</div>
+                                        <div class="text-muted small">{{ user.email }}</div>
+                                    </label>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="alert alert-warning">
+                                No users found in the system.
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'admin_dashboard:admin_vouchers' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-tag"></i> Assign Vouchers
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        const searchInput = document.getElementById('userSearchInput');
+        const userItems = document.querySelectorAll('.user-item');
+        
+        searchInput.addEventListener('input', function() {
+            const searchValue = this.value.toLowerCase();
+            
+            userItems.forEach(item => {
+                const username = item.querySelector('label div:first-child').textContent.toLowerCase();
+                const email = item.querySelector('label div:last-child').textContent.toLowerCase();
+                
+                if (username.includes(searchValue) || email.includes(searchValue)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Select all users button
+        const selectAllBtn = document.getElementById('selectAllUsers');
+        const userCheckboxes = document.querySelectorAll('.user-checkbox');
+        
+        selectAllBtn.addEventListener('click', function() {
+            const isAllSelected = [...userCheckboxes].every(checkbox => checkbox.checked);
+            
+            userCheckboxes.forEach(checkbox => {
+                checkbox.checked = !isAllSelected;
+            });
+            
+            if (isAllSelected) {
+                this.innerHTML = '<i class="fas fa-check-square"></i> Select All Users';
+            } else {
+                this.innerHTML = '<i class="fas fa-times-circle"></i> Deselect All Users';
+            }
+        });
+    });
+</script>
+{% endblock %} 

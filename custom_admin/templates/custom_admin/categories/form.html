@@ -1,0 +1,75 @@
+<!-- custom_admin/templates/custom_admin/categories/form.html -->
+{% extends 'custom_admin/base.html' %}
+
+{% block title %}{{ title }} - E-Shop Admin{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'admin_dashboard:admin_categories' %}" class="btn btn-sm btn-secondary">
+    <i class="fas fa-arrow-left me-1"></i> Back to Categories
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">Category Name</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.image.id_for_label }}" class="form-label">Category Image</label>
+                        {{ form.image }}
+                        {% if form.image.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.image.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if category and category.image %}
+                            <div class="mt-2">
+                                <img src="{{ category.image.url }}" alt="{{ category.name }}" class="img-thumbnail" style="max-height: 200px;">
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    {% if is_add %}
+                        <i class="fas fa-plus me-1"></i> Add Category
+                    {% else %}
+                        <i class="fas fa-save me-1"></i> Update Category
+                    {% endif %}
+                </button>
+                <a href="{% url 'admin_dashboard:admin_categories' %}" class="btn btn-secondary ms-2">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

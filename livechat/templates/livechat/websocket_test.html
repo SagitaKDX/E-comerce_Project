@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #connection-status {
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        #log {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            font-family: monospace;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Connection Test</h1>
+    
+    <div id="connection-status">Status: Disconnected</div>
+    
+    <div>
+        <button id="connect-btn">Connect</button>
+        <button id="disconnect-btn" disabled>Disconnect</button>
+        <button id="send-btn" disabled>Send Test Message</button>
+    </div>
+    
+    <h3>WebSocket Log:</h3>
+    <div id="log"></div>
+    
+    <script>
+        const statusDiv = document.getElementById('connection-status');
+        const logDiv = document.getElementById('log');
+        const connectBtn = document.getElementById('connect-btn');
+        const disconnectBtn = document.getElementById('disconnect-btn');
+        const sendBtn = document.getElementById('send-btn');
+        
+        let socket = null;
+        
+        function getWebSocketUrl() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            return `${protocol}//${window.location.host}/ws/test/`;
+        }
+        
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(connected) {
+            statusDiv.textContent = `Status: ${connected ? 'Connected' : 'Disconnected'}`;
+            statusDiv.className = connected ? 'success' : 'error';
+            connectBtn.disabled = connected;
+            disconnectBtn.disabled = !connected;
+            sendBtn.disabled = !connected;
+        }
+        
+        connectBtn.addEventListener('click', () => {
+            if (socket) {
+                log('Already connected, disconnect first', 'error');
+                return;
+            }
+            
+            try {
+                const url = getWebSocketUrl();
+                log(`Connecting to ${url}...`);
+                
+                socket = new WebSocket(url);
+                
+                socket.onopen = (event) => {
+                    log('Connection established!', 'success');
+                    updateStatus(true);
+                };
+                
+                socket.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(`Received: ${JSON.stringify(data, null, 2)}`, 'info');
+                    } catch (e) {
+                        log(`Received (raw): ${event.data}`, 'info');
+                    }
+                };
+                
+                socket.onerror = (error) => {
+                    log(`WebSocket Error: ${error}`, 'error');
+                };
+                
+                socket.onclose = (event) => {
+                    const reason = event.reason ? `Reason: ${event.reason}` : 'No reason provided';
+                    log(`Connection closed. Code: ${event.code}. ${reason}`, event.code === 1000 ? 'info' : 'error');
+                    socket = null;
+                    updateStatus(false);
+                };
+            } catch (error) {
+                log(`Error creating WebSocket: ${error.message}`, 'error');
+            }
+        });
+        
+        disconnectBtn.addEventListener('click', () => {
+            if (!socket) {
+                log('Not connected', 'error');
+                return;
+            }
+            
+            log('Closing connection...');
+            socket.close(1000, 'User initiated disconnect');
+        });
+        
+        sendBtn.addEventListener('click', () => {
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                log('Not connected, cannot send', 'error');
+                return;
+            }
+            
+            const testMessage = {
+                type: 'test',
+                content: 'Hello from WebSocket test page!',
+                timestamp: new Date().toISOString()
+            };
+            
+            socket.send(JSON.stringify(testMessage));
+            log(`Sent: ${JSON.stringify(testMessage)}`, 'info');
+        });
+        
+        // Connection details display
+        log(`Browser WebSocket support: ${window.WebSocket ? 'Yes' : 'No'}`);
+        log(`Current location: ${window.location.href}`);
+        log(`WebSocket URL will be: ${getWebSocketUrl()}`);
+    </script>
+</body>
+</html> 

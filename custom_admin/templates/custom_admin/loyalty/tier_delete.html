@@ -1,0 +1,80 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}Delete Loyalty Tier - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Delete Loyalty Tier</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:loyalty_dashboard' %}">Loyalty Program</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:loyalty_tiers_list' %}">Loyalty Tiers</a></li>
+        <li class="breadcrumb-item active">Delete Tier</li>
+    </ol>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-lg border-danger mb-4">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Confirm Deletion
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
+                        <h4>Delete "{{ tier.name }}" Tier?</h4>
+                        <p class="text-muted">This action cannot be undone.</p>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i>Warning</h5>
+                        <p>Deleting this loyalty tier will:</p>
+                        <ul class="mb-0">
+                            <li>Remove all users from this tier</li>
+                            <li>Potentially reassign users to lower tiers based on their spending</li>
+                            <li>Remove all tier-specific discount benefits</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Tier Information</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><strong>Name:</strong></span>
+                                    <span class="badge bg-{{ tier.color_class|default:'secondary' }} px-3 py-2">{{ tier.name }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><strong>Minimum Spend:</strong></span>
+                                    <span>${{ tier.minimum_spend }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><strong>Discount:</strong></span>
+                                    <span>{{ tier.discount_percentage }}%</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><strong>Users in Tier:</strong></span>
+                                    <span class="badge bg-primary rounded-pill">{{ customer_count }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <form method="post" action="">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt me-1"></i> Yes, Delete This Tier
+                            </button>
+                            <a href="{% url 'admin_dashboard:loyalty_tiers_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

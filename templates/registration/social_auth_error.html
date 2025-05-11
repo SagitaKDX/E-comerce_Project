@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Social Authentication Error{% endblock %}
+
+{% block extra_css %}
+<style>
+    .error-container {
+        max-width: 600px;
+        margin: 3rem auto;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        background-color: #fff;
+    }
+    .error-icon {
+        font-size: 3rem;
+        color: #dc3545;
+        margin-bottom: 1rem;
+    }
+    .error-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+    .error-message {
+        margin-bottom: 1.5rem;
+        color: #555;
+        line-height: 1.6;
+        white-space: pre-line;
+        text-align: left;
+    }
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: center;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+    .btn-primary:hover, .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .mobile-tip {
+        background-color: #f8f9fa;
+        border-left: 4px solid #17a2b8;
+        padding: 1rem;
+        margin-top: 1.5rem;
+        border-radius: 0 4px 4px 0;
+        text-align: left;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="error-container text-center">
+        <div class="error-icon">
+            <i class="fas fa-exclamation-circle"></i>
+        </div>
+        <h1 class="error-title">Social Authentication Failed</h1>
+        <div class="error-message">
+            {{ error_message }}
+        </div>
+        
+        {% if error_code == 'disallowed_useragent' or 'disallowed_useragent' in error_message %}
+        <div class="mobile-tip">
+            <h5><i class="fas fa-mobile-alt me-2"></i> Mobile Browser Detected</h5>
+            <p>Google restricts OAuth sign-in from certain mobile browsers for security reasons. Try these options:</p>
+            <ul>
+                <li>Switch to "Desktop Site" in your browser settings</li>
+                <li>Use a desktop browser instead</li>
+                <li>Register with email and password</li>
+            </ul>
+        </div>
+        {% endif %}
+        
+        <div class="action-buttons">
+            <a href="{% url 'login' %}" class="btn-primary">
+                <i class="fas fa-sign-in-alt me-2"></i> Try Again
+            </a>
+            <a href="{% url 'register' %}" class="btn-secondary">
+                <i class="fas fa-user-plus me-2"></i> Register with Email
+            </a>
+        </div>
+        <div class="mt-4">
+            <p>If you continue experiencing issues, please <a href="{% url 'contact' %}">contact our support team</a>.</p>
+        </div>
+    </div>
+</div>
+{% endblock %} 

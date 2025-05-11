@@ -1,0 +1,156 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{{ page_title }} - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{{ page_title }}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:loyalty_dashboard' %}">Loyalty Program</a></li>
+        <li class="breadcrumb-item active">Settings</li>
+    </ol>
+    
+    <div class="row">
+        <div class="col-lg-6">
+            <!-- Anniversary Voucher Settings -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-birthday-cake me-1"></i>
+                    Anniversary Vouchers
+                </div>
+                <div class="card-body">
+                    <form method="post" action="">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3 form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="id_active" name="active" {% if form.active.value %}checked{% endif %}>
+                            <label class="form-check-label" for="id_active">Enable Anniversary Vouchers</label>
+                            <div class="form-text text-muted">When enabled, customers will receive vouchers on their account anniversary.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_amount" class="form-label">Voucher Amount ($)</label>
+                            <input type="number" class="form-control" id="id_amount" name="amount" value="{{ form.amount.value|default:'10.00' }}" step="0.01" min="0">
+                            <div class="form-text text-muted">Default amount for anniversary vouchers.</div>
+                            {% if form.amount.errors %}
+                                <div class="invalid-feedback d-block">{{ form.amount.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_valid_days" class="form-label">Validity Period (days)</label>
+                            <input type="number" class="form-control" id="id_valid_days" name="valid_days" value="{{ form.valid_days.value|default:'30' }}" min="1">
+                            <div class="form-text text-muted">Number of days the voucher remains valid after creation.</div>
+                            {% if form.valid_days.errors %}
+                                <div class="invalid-feedback d-block">{{ form.valid_days.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Save Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-1"></i>
+                    About Loyalty Settings
+                </div>
+                <div class="card-body">
+                    <h5>Anniversary Vouchers</h5>
+                    <p>Anniversary vouchers are automatically created for customers on the anniversary of their account creation. This is a great way to reward loyal customers and encourage repeat purchases.</p>
+                    
+                    <h5>Best Practices</h5>
+                    <ul>
+                        <li>Set voucher amounts based on your average order value</li>
+                        <li>Keep validity periods reasonable (30-60 days)</li>
+                        <li>Consider increasing voucher amounts for higher tier customers</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <!-- Scheduled Tasks Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-clock me-1"></i>
+                    Scheduled Tasks
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">Tier Recalculation</h5>
+                                <small class="text-muted">Daily at 3:00 AM</small>
+                            </div>
+                            <p class="mb-1">Automatically updates customer tiers based on their total spend.</p>
+                            <div class="d-flex justify-content-end mt-2">
+                                <a href="{% url 'admin_dashboard:recalculate_loyalty_tiers' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-sync me-1"></i> Run Now
+                                </a>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">Anniversary Vouchers</h5>
+                                <small class="text-muted">Daily at 6:00 AM</small>
+                            </div>
+                            <p class="mb-1">Checks for customer anniversaries and creates vouchers if enabled.</p>
+                            <div class="d-flex justify-content-end mt-2">
+                                <a href="#" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-sync me-1"></i> Run Now
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Status Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-heartbeat me-1"></i>
+                    System Status
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th>Last Recalculation</th>
+                                <td>{{ last_recalculation|default:"Not available" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Active Tiers</th>
+                                <td>{{ active_tiers_count|default:"0" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Active Vouchers</th>
+                                <td>{{ active_vouchers_count|default:"0" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Anniversary Vouchers</th>
+                                <td>
+                                    {% if form.active.value %}
+                                        <span class="badge bg-success">Enabled</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Disabled</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

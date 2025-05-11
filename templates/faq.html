@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Frequently Asked Questions | {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css">
+<style>
+    .faq-section {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+    .faq-search-mobile {
+        margin-bottom: 2rem;
+    }
+    .faq-search-mobile .form-control {
+        border-radius: 50px;
+        padding: 0.75rem 1.25rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .faq-item {
+        margin-bottom: 2rem;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        padding-bottom: 1.5rem;
+        transition: opacity 0.3s ease-out; /* For smooth filtering */
+    }
+    .faq-item.hidden { /* Class to hide non-matching items */
+        display: none;
+        opacity: 0;
+    }
+    .faq-item:last-child {
+        border-bottom: none;
+    }
+    .faq-item h3 {
+        color: #333; /* Keep title color */
+        margin-bottom: 1rem;
+    }
+    .markdown-body {
+        background-color: transparent;
+        padding: 0;
+        color: #212529; /* Change default body text color from gray to default dark */
+    }
+    /* Ensure paragraphs within markdown inherit the color */
+    .markdown-body p {
+        color: inherit;
+    }
+    .page-heading {
+        text-align: center;
+        margin-bottom: 2rem; /* Adjusted margin */
+    }
+    .page-heading .text-muted {
+        color: #6c757d !important; /* Keep subheading muted */
+    }
+    .faq-empty, .faq-no-results {
+        text-align: center;
+        padding: 3rem 0;
+        color: #777;
+    }
+    .faq-no-results {
+        display: none; /* Hide initially */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="faq-section">
+        <div class="page-heading">
+            <h1>Frequently Asked Questions</h1>
+            <p class="text-muted">Find answers to commonly asked questions about our products and services.</p>
+        </div>
+
+        <!-- Mobile Search Bar -->
+        <div class="faq-search-mobile mb-4">
+            <input type="search" id="faqSearchMobile" class="form-control" placeholder="Search FAQs by title...">
+        </div>
+
+        {% if faqs %}
+            <div class="faq-list">
+                {% for faq in faqs %}
+                    <div class="faq-item" id="faq-{{ faq.id }}" data-title="{{ faq.title|lower }}">
+                        <h3>{{ faq.title }}</h3>
+                        <div class="markdown-body faq-content" data-content="{{ faq.content|escapejs }}">
+                            Loading...
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="faq-no-results">
+                <p>No FAQs found matching your search.</p>
+            </div>
+        {% else %}
+            <div class="faq-empty">
+                <p>No FAQ items available yet. Please check back later.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup marked.js with safe options
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            headerIds: true,
+            sanitize: false // Be careful with this if content isn't trusted
+        });
+
+        // Render all FAQ content
+        document.querySelectorAll('.faq-content').forEach(function(element) {
+            const content = element.getAttribute('data-content');
+            if (content) {
+                element.innerHTML = marked.parse(content);
+            } else {
+                element.innerHTML = '<p>Error loading content.</p>'; // Fallback
+            }
+        });
+
+        // FAQ Search Functionality
+        const searchInput = document.getElementById('faqSearchMobile');
+        const faqItems = document.querySelectorAll('.faq-item');
+        const noResultsMessage = document.querySelector('.faq-no-results');
+        const faqList = document.querySelector('.faq-list'); // Get the container
+
+        if (searchInput && faqItems.length > 0 && noResultsMessage && faqList) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                let visibleCount = 0;
+
+                faqItems.forEach(function(item) {
+                    const title = item.getAttribute('data-title') || ''; // Use pre-lowercased data-title
+                    if (title.includes(searchTerm)) {
+                        item.classList.remove('hidden');
+                        visibleCount++;
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                });
+
+                // Show/hide "no results" message
+                if (visibleCount === 0 && searchTerm !== '') {
+                    noResultsMessage.style.display = 'block';
+                    faqList.style.display = 'none'; // Hide the list container
+                } else {
+                    noResultsMessage.style.display = 'none';
+                    faqList.style.display = 'block'; // Show the list container
+                }
+            });
+        } else {
+            console.warn('FAQ search elements not found, search disabled.');
+        }
+    });
+</script>
+{% endblock %} 

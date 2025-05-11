@@ -1,0 +1,538 @@
+{% extends 'custom_admin/crm/base.html' %}
+
+{% block title %}CRM Dashboard{% endblock %}
+
+{% block page_title %}CRM Dashboard{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'crm:crm_comment_list' %}" class="btn btn-sm btn-outline-primary">
+    <i class="fas fa-list me-1"></i> All Comments
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Stats Cards -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2 stats-card fade-in">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            New Comments</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ new_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-comment-dots fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2 stats-card fade-in" style="animation-delay: 0.1s;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            In Progress</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ in_progress_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2 stats-card fade-in" style="animation-delay: 0.2s;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Resolved</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ resolved_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2 stats-card fade-in" style="animation-delay: 0.3s;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Total Comments</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-comments fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Response Time Metrics -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card shadow mb-4 fade-in" style="animation-delay: 0.35s;">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Response Time Metrics</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="metric-card p-3 bg-light rounded">
+                            <h6 class="text-uppercase text-muted">Avg. First Response Time</h6>
+                            <div class="d-flex align-items-center">
+                                <div class="display-4 me-3">{{ avg_response_time|default:"--" }}</div>
+                                <div class="text-muted">hours</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="metric-card p-3 bg-light rounded">
+                            <h6 class="text-uppercase text-muted">Avg. Resolution Time</h6>
+                            <div class="d-flex align-items-center">
+                                <div class="display-4 me-3">{{ avg_resolution_time|default:"--" }}</div>
+                                <div class="text-muted">hours</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card shadow mb-4 fade-in" style="animation-delay: 0.35s;">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Customer Satisfaction</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <div class="metric-card p-3 bg-light rounded">
+                            <h6 class="text-uppercase text-muted">Avg. Product Rating</h6>
+                            <div class="d-flex align-items-center">
+                                <div class="h1 me-2 text-warning">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div class="display-4">
+                                    {% with avg_rating=recent_product_ratings|dictsort:"rating"|last %}
+                                        {{ avg_rating.rating|default:"--" }}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="metric-card p-3 bg-light rounded">
+                            <h6 class="text-uppercase text-muted">Avg. Package Rating</h6>
+                            <div class="d-flex align-items-center">
+                                <div class="h1 me-2 text-warning">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div class="display-4">
+                                    {% with avg_rating=recent_package_ratings|dictsort:"rating"|last %}
+                                        {{ avg_rating.rating|default:"--" }}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Ratings Alert Section (Last 24 Hours) -->
+{% if new_ratings_count > 0 %}
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-warning-subtle border-warning shadow mb-4 fade-in" style="animation-delay: 0.38s;">
+            <div class="card-header py-3 bg-warning-subtle">
+                <h6 class="m-0 font-weight-bold text-warning d-flex align-items-center">
+                    <i class="fas fa-star-half-alt me-2"></i>
+                    New Ratings in the Last 24 Hours
+                    <span class="badge bg-warning text-dark ms-2">{{ new_ratings_count }}</span>
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="bg-warning-subtle">
+                            <tr>
+                                <th>Product/Package</th>
+                                <th>User</th>
+                                <th>Rating</th>
+                                <th>Feedback</th>
+                                <th>Time</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rating in new_product_ratings %}
+                            <tr>
+                                <td class="fw-bold">{{ rating.product.name }}</td>
+                                <td>
+                                    <a href="{% url 'crm:crm_user_detail' rating.user.id %}" class="text-primary">
+                                        {{ rating.user.username }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="rating-stars">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= rating.rating %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="far fa-star text-warning"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td>{{ rating.feedback|truncatechars:50 }}</td>
+                                <td>{{ rating.created_at|timesince }} ago</td>
+                                <td>
+                                    <a href="{% url 'crm:crm_product_detail' rating.product.id %}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-eye"></i> Review
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            
+                            {% for rating in new_package_ratings %}
+                            <tr>
+                                <td class="fw-bold">{{ rating.package.name }} <span class="badge bg-info">Package</span></td>
+                                <td>
+                                    <a href="{% url 'crm:crm_user_detail' rating.user.id %}" class="text-primary">
+                                        {{ rating.user.username }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="rating-stars">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= rating.rating %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="far fa-star text-warning"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td>{{ rating.feedback|truncatechars:50 }}</td>
+                                <td>{{ rating.created_at|timesince }} ago</td>
+                                <td>
+                                    <a href="{% url 'crm:crm_package_detail' rating.package.id %}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-eye"></i> Review
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            
+                            {% if not new_product_ratings and not new_package_ratings %}
+                            <tr>
+                                <td colspan="6" class="text-center">No new ratings in the last 24 hours</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Main Content -->
+<div class="row">
+    <!-- Recent Comments -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4 fade-in" style="animation-delay: 0.4s;">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Comments</h6>
+                <a href="{% url 'crm:crm_comment_list' %}?status=new" class="btn btn-sm btn-primary">View All New</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Product</th>
+                                <th>User</th>
+                                <th>Created</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comment in recent_comments %}
+                            <tr>
+                                <td>#{{ comment.id }}</td>
+                                <td>{{ comment.product.name }}</td>
+                                <td>{{ comment.user.username }}</td>
+                                <td>{{ comment.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if comment.status == 'new' %}
+                                    <span class="badge bg-primary">New</span>
+                                    {% elif comment.status == 'in_progress' %}
+                                    <span class="badge bg-warning">In Progress</span>
+                                    {% elif comment.status == 'resolved' %}
+                                    <span class="badge bg-success">Resolved</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Closed</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'crm:crm_comment_detail' comment.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No comments found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assigned to You -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4 fade-in" style="animation-delay: 0.5s;">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Assigned to You</h6>
+                <a href="{% url 'crm:crm_comment_list' %}?assignment=assigned_to_me" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Product</th>
+                                <th>User</th>
+                                <th>Created</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comment in assigned_comments %}
+                            <tr>
+                                <td>#{{ comment.id }}</td>
+                                <td>{{ comment.product.name }}</td>
+                                <td>{{ comment.user.username }}</td>
+                                <td>{{ comment.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if comment.status == 'new' %}
+                                    <span class="badge bg-primary">New</span>
+                                    {% elif comment.status == 'in_progress' %}
+                                    <span class="badge bg-warning">In Progress</span>
+                                    {% elif comment.status == 'resolved' %}
+                                    <span class="badge bg-success">Resolved</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Closed</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'crm:crm_comment_detail' comment.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No comments assigned to you</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Ratings -->
+<div class="row">
+    <!-- Recent Product Ratings -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4 fade-in" style="animation-delay: 0.55s;">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Product Ratings</h6>
+                <a href="{% url 'crm:crm_product_list' %}" class="btn btn-sm btn-primary">View All Products</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>User</th>
+                                <th>Rating</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rating in recent_product_ratings %}
+                            <tr>
+                                <td>{{ rating.product.name }}</td>
+                                <td>{{ rating.user.username }}</td>
+                                <td>
+                                    <div class="rating-stars">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= rating.rating %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="far fa-star text-warning"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td>{{ rating.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'crm:crm_product_detail' rating.product.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No product ratings found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Package Ratings -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4 fade-in" style="animation-delay: 0.6s;">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Package Ratings</h6>
+                <a href="{% url 'crm:crm_package_list' %}" class="btn btn-sm btn-primary">View All Packages</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Package</th>
+                                <th>User</th>
+                                <th>Rating</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rating in recent_package_ratings %}
+                            <tr>
+                                <td>{{ rating.package.name }}</td>
+                                <td>{{ rating.user.username }}</td>
+                                <td>
+                                    <div class="rating-stars">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= rating.rating %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="far fa-star text-warning"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td>{{ rating.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'crm:crm_package_detail' rating.package.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No package ratings found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4 fade-in" style="animation-delay: 0.65s;">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'crm:crm_comment_list' %}?status=new" class="btn btn-primary btn-block w-100">
+                            <i class="fas fa-comment-dots me-2"></i> New Comments
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'crm:crm_comment_list' %}?assignment=unassigned" class="btn btn-warning btn-block w-100">
+                            <i class="fas fa-user-plus me-2"></i> Unassigned Comments
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'crm:crm_analytics' %}" class="btn btn-info btn-block w-100">
+                            <i class="fas fa-chart-line me-2"></i> CRM Analytics
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'crm:crm_settings' %}" class="btn btn-secondary btn-block w-100">
+                            <i class="fas fa-cog me-2"></i> CRM Settings
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'crm:crm_user_list' %}" class="btn btn-success btn-block w-100">
+                            <i class="fas fa-users me-2"></i> All Users
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'crm:crm_order_list' %}" class="btn btn-primary btn-block w-100">
+                            <i class="fas fa-shopping-bag me-2"></i> All Orders
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'crm:crm_product_list' %}" class="btn btn-info btn-block w-100">
+                            <i class="fas fa-box me-2"></i> All Products
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'crm:crm_package_list' %}" class="btn btn-success btn-block w-100">
+                            <i class="fas fa-boxes me-2"></i> All Packages
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

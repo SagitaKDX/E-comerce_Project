@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Agent Chat | Admin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'livechat/css/agent_chat.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="agent-chat-container">
+    <div class="sidebar">
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Search conversations...">
+        </div>
+        <div class="chat-rooms">
+            {% for room in chat_rooms %}
+            <div class="chat-room-item" data-room-id="{{ room.id }}">
+                <div class="customer-avatar">{{ room.customer_name|first|upper }}</div>
+                <div class="room-info">
+                    <div class="customer-name">{{ room.customer_name }}</div>
+                    <div class="last-message">{{ room.last_message }}</div>
+                </div>
+                <div class="room-meta">
+                    <div class="timestamp">{{ room.last_activity|time:"H:i" }}</div>
+                    {% if room.unread_count > 0 %}
+                    <div class="unread-badge">{{ room.unread_count }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-rooms">No active conversations</div>
+            {% endfor %}
+        </div>
+        <div class="agent-info">
+            <div class="agent-avatar">{{ request.user.first_name|first|upper }}</div>
+            <div class="agent-name">{{ request.user.get_full_name }}</div>
+            <div class="agent-status online">Online</div>
+        </div>
+    </div>
+    
+    <div class="main-chat">
+        <div class="chat-header">
+            <div class="customer-header">
+                <div class="customer-avatar"></div>
+                <div class="customer-name"></div>
+            </div>
+            <div class="chat-actions">
+                <button class="action-button">View Info</button>
+                <button class="action-button">End Chat</button>
+            </div>
+        </div>
+        
+        <div class="chat-messages">
+            <!-- Messages will be loaded dynamically -->
+        </div>
+        
+        <div class="quick-replies-container">
+            <div class="quick-reply">Hi there! How can I help you today?</div>
+            <div class="quick-reply">I'll check that for you right away.</div>
+            <div class="quick-reply">Is there anything else you'd like help with?</div>
+            <div class="quick-reply">Thank you for contacting us!</div>
+        </div>
+        
+        <div class="chat-input-container">
+            <textarea class="chat-input" placeholder="Type your message..."></textarea>
+            <button class="send-button">Send</button>
+        </div>
+    </div>
+    
+    <div class="empty-state">
+        <div class="empty-state-icon">💬</div>
+        <h3>Select a chat to get started</h3>
+        <p>Choose a conversation from the sidebar to begin chatting.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'livechat/js/agent_chat.js' %}"></script>
+{% endblock %} 

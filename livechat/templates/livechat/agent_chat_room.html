@@ -1,0 +1,893 @@
+{% extends 'custom_admin/crm/base.html' %}
+{% load static %}
+
+{% block title %}Support Chat: {{ chat_session.subject }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: calc(100vh - 150px);
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #e1e1e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        background: #fff;
+        margin: 0;
+    }
+    
+    .chat-header {
+        padding: 15px;
+        background: #2c3e50;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background: #f8f9fa;
+    }
+    
+    .message {
+        margin-bottom: 15px;
+        display: flex;
+        flex-direction: column;
+        max-width: 75%;
+    }
+    
+    .message-user {
+        align-self: flex-end;
+    }
+    
+    .message-agent {
+        align-self: flex-start;
+    }
+    
+    .message-system {
+        align-self: center;
+        text-align: center;
+        color: #6c757d;
+        max-width: 90%;
+        font-style: italic;
+    }
+    
+    .message-bubble {
+        padding: 10px 15px;
+        border-radius: 18px;
+        position: relative;
+        margin-top: 5px;
+    }
+    
+    .message-user .message-bubble {
+        background-color: #3498db;
+        color: white;
+        border-bottom-right-radius: 0;
+    }
+    
+    .message-agent .message-bubble {
+        background-color: #2c3e50;
+        color: white;
+        border-bottom-left-radius: 0;
+    }
+    
+    .message-system .message-bubble {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+    }
+    
+    .message-header {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 3px;
+    }
+    
+    .message-user .message-header {
+        text-align: right;
+    }
+    
+    .message-agent .message-header {
+        text-align: left;
+    }
+    
+    .chat-input {
+        padding: 15px;
+        border-top: 1px solid #e1e1e1;
+        background: white;
+    }
+    
+    .chat-status {
+        padding: 8px 15px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #e1e1e1;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .typing-indicator span {
+        height: 5px;
+        width: 5px;
+        background-color: #6c757d;
+        border-radius: 50%;
+        display: inline-block;
+        margin: 0 1px;
+        animation: typing 1s infinite;
+    }
+    
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes typing {
+        0% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-5px);
+        }
+        100% {
+            transform: translateY(0px);
+        }
+    }
+    
+    .quick-reply-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 10px;
+    }
+    
+    .quick-reply-btn {
+        font-size: 0.8rem;
+        padding: 4px 8px;
+        white-space: nowrap;
+    }
+    
+    .customer-info-sidebar {
+        height: calc(100vh - 150px);
+        overflow-y: auto;
+    }
+    
+    .customer-info-card {
+        position: sticky;
+        top: 0;
+    }
+    
+    .badge-status {
+        position: absolute;
+        top: 0;
+        right: 0;
+        transform: translate(50%, -50%);
+    }
+    
+    /* Notification styles for CRM users */
+    .crm-notification {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 320px;
+        background-color: rgba(255, 255, 255, 0.95);
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 1000;
+        cursor: pointer;
+        border-left: 4px solid #2c3e50;
+        max-width: calc(100vw - 60px);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    
+    .crm-notification.show {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    
+    .crm-notification .notification-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background-color: #2c3e50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+    
+    .crm-notification .notification-content {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .crm-notification .notification-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #2c3e50;
+    }
+    
+    .crm-notification .notification-message {
+        color: #6c757d;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .crm-notification .notification-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        line-height: 1;
+        color: #6c757d;
+        margin-left: 10px;
+        padding: 0;
+        cursor: pointer;
+    }
+    
+    .crm-notification .notification-close:hover {
+        color: #343a40;
+    }
+    
+    .crm-notification:hover {
+        transform: translateY(-2px) scale(1.01);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.18);
+    }
+    
+    .crm-notification {
+        animation: notification-pulse 2s infinite;
+    }
+    
+    @media (max-width: 576px) {
+        .crm-notification {
+            width: calc(100% - 40px);
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Support Chat</h1>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'crm:crm_dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'livechat:agent_dashboard' %}">Live Chat</a></li>
+                <li class="breadcrumb-item active">Chat #{{ chat_id|truncatechars:8 }}</li>
+            </ol>
+        </div>
+        <div>
+            <a href="{% url 'livechat:agent_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+            </a>
+            <a href="{% url 'livechat:export_transcript' chat_id=chat_id %}" class="btn btn-outline-primary">
+                <i class="fas fa-download me-1"></i> Export Chat
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div>
+                        <h5 class="mb-0">{{ chat_session.subject }}</h5>
+                        <div class="d-flex align-items-center">
+                            <span id="status-indicator">
+                                {% if chat_session.status == 'waiting' %}
+                                    <span class="text-warning">●</span> Waiting for agent
+                                {% elif chat_session.status == 'active' %}
+                                    <span class="text-success">●</span> Chat active
+                                {% else %}
+                                    <span class="text-secondary">●</span> Chat closed
+                                {% endif %}
+                            </span>
+                            <span class="typing-indicator d-none ms-2" id="typing-indicator">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-danger" id="endChatBtn">
+                            <i class="fas fa-times-circle me-1"></i> End Chat
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="chat-messages">
+                    {% for message in messages %}
+                        {% if message.message_type == 'system' %}
+                        <div class="message message-system">
+                            <div class="message-bubble">
+                                {{ message.content }}
+                            </div>
+                            <div class="message-time text-center">
+                                <small>{{ message.timestamp|date:"g:i A" }}</small>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="message {% if message.is_agent %}message-agent{% else %}message-user{% endif %}">
+                            <div class="message-header">
+                                {{ message.username }} • {{ message.timestamp|date:"g:i A" }}
+                            </div>
+                            <div class="message-bubble">
+                                {{ message.content|linebreaksbr }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <div class="chat-input">
+                    <div class="quick-reply-toolbar">
+                        <button type="button" class="btn btn-sm btn-outline-secondary quick-reply-btn" onclick="insertQuickReply('Hello! How can I assist you today?')">
+                            Greeting
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary quick-reply-btn" onclick="insertQuickReply('Could you please provide more details about your issue?')">
+                            Request Details
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary quick-reply-btn" onclick="insertQuickReply('I'll need to check that for you. One moment please.')">
+                            Wait Request
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary quick-reply-btn" onclick="insertQuickReply('Is there anything else I can help you with today?')">
+                            Anything Else
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary quick-reply-btn" onclick="insertQuickReply('Thank you for contacting our support team. Have a great day!')">
+                            Closing
+                        </button>
+                    </div>
+                    <form id="chat-form" class="d-flex">
+                        <input type="text" id="chat-message" class="form-control" placeholder="Type your reply..." 
+                               {% if chat_session.status == 'closed' %}disabled{% endif %}>
+                        <button type="submit" class="btn btn-primary ms-2" {% if chat_session.status == 'closed' %}disabled{% endif %}>
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="customer-info-sidebar">
+                <div class="card customer-info-card mb-4">
+                    <div class="card-header position-relative">
+                        <h5 class="mb-0">Customer Information</h5>
+                        <span class="badge bg-{{ chat_session.status|yesno:'success,warning,secondary' }} badge-status">
+                            {{ chat_session.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <h6>Chat Details</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Started:</strong> {{ chat_session.started_at|date:"M d, Y g:i A" }}</li>
+                            <li><strong>Duration:</strong> <span id="chat-duration">Calculating...</span></li>
+                            <li><strong>Subject:</strong> {{ chat_session.subject }}</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">Customer</h6>
+                        <ul class="list-unstyled">
+                            {% if chat_session.user %}
+                                <li><strong>Name:</strong> {{ chat_session.user.get_full_name|default:"Not provided" }}</li>
+                                <li><strong>Email:</strong> {{ chat_session.user.email }}</li>
+                                <li><strong>Customer Since:</strong> {{ chat_session.user.date_joined|date:"M Y" }}</li>
+                            {% elif chat_session.user_email %}
+                                <li><strong>Email:</strong> {{ chat_session.user_email }}</li>
+                                <li><strong>Guest Customer</strong></li>
+                            {% else %}
+                                <li>No customer information available</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Recent Orders</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_orders %}
+                            <ul class="list-group list-group-flush">
+                                {% for order in recent_orders %}
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>#{{ order.order_number }}</strong>
+                                            <div class="text-muted">{{ order.created_at|date:"M d, Y" }}</div>
+                                        </div>
+                                        <span class="badge bg-{{ order.status|yesno:'success,primary,secondary' }}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-1">${{ order.total_price }}</div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <div class="alert alert-info mb-0">
+                                No recent orders found for this customer.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Notes</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="notes-form">
+                            <div class="form-group">
+                                <textarea class="form-control" id="agent-notes" rows="4" 
+                                          placeholder="Add private notes about this customer...">{{ chat_session.agent_notes }}</textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-2">Save Notes</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const MAX_RECONNECT_ATTEMPTS = 5;
+    const DEBUG = {% if debug %}true{% else %}false{% endif %};
+    
+    // Debug logging helper
+    function debugLog(message, data) {
+        if (DEBUG) {
+            if (data) {
+                console.log('[DEBUG ' + new Date().toISOString().substring(11, 19) + ']', message, data);
+            } else {
+                console.log('[DEBUG ' + new Date().toISOString().substring(11, 19) + ']', message);
+            }
+        }
+    }
+    
+    // Setup variables
+    let reconnectAttempts = 0;
+    let reconnectTimeout = null;
+    let chatSocket = null;
+    // Track sent message IDs to prevent duplicates
+    const sentMessageIds = new Set();
+    // Custom client-side message ID counter
+    let clientMessageCounter = 0;
+    
+    // Fix the WebSocket URL construction to handle special characters
+    const chatId = "{{ chat_id }}";
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    
+    // Try two different WebSocket URL approaches
+    // First, try with the current hostname and port 8001 (where Daphne is running)
+    const wsUrlDaphne = `${wsProtocol}${window.location.hostname}:8001/ws/chat/${chatId}/`;
+    // Second, as a fallback, try with the current host (which might include the correct port)
+    const wsUrlFallback = `${wsProtocol}${window.location.host}/ws/chat/${chatId}/`;
+    
+    // Track which URL works
+    let activeWsUrl = wsUrlDaphne;
+    
+    debugLog("Primary WebSocket URL:", wsUrlDaphne);
+    debugLog("Fallback WebSocket URL:", wsUrlFallback);
+    
+    const messagesContainer = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-message');
+    const endChatBtn = document.getElementById('endChatBtn');
+    const statusIndicator = document.getElementById('status-indicator');
+    const typingIndicator = document.getElementById('typing-indicator');
+    
+    // Function to initialize WebSocket connection
+    function initWebSocket() {
+        debugLog(`Attempt ${reconnectAttempts + 1} to connect WebSocket`);
+        
+        // Close existing socket if it exists
+        if (chatSocket) {
+            debugLog("Closing existing WebSocket connection");
+            chatSocket.close();
+        }
+        
+        // Create new WebSocket connection
+        try {
+            debugLog(`Creating new WebSocket connection to: ${activeWsUrl}`);
+            chatSocket = new WebSocket(activeWsUrl);
+            
+            // Set timeout for connection
+            const connectionTimeout = setTimeout(() => {
+                // If we're still connecting, try the fallback URL
+                if (chatSocket && chatSocket.readyState === WebSocket.CONNECTING) {
+                    debugLog("Connection timeout, trying fallback URL");
+                    chatSocket.close();
+                    
+                    // If we already tried the fallback, don't loop
+                    if (activeWsUrl === wsUrlFallback) {
+                        debugLog("Both URLs failed to connect");
+                        statusIndicator.innerHTML = '<span class="text-danger">●</span> Connection failed (check server)';
+                        alert("Failed to connect to chat server. Please check if the WebSocket server is running.");
+                        return;
+                    }
+                    
+                    // Switch to fallback URL and try again
+                    activeWsUrl = wsUrlFallback;
+                    initWebSocket();
+                }
+            }, 5000);
+            
+            // WebSocket event listeners
+            chatSocket.onopen = function(e) {
+                clearTimeout(connectionTimeout);
+                debugLog(`WebSocket connection established successfully using ${activeWsUrl}`);
+                statusIndicator.innerHTML = '{% if chat_session.status == "waiting" %}<span class="text-warning">●</span> Waiting for agent...{% elif chat_session.status == "active" %}<span class="text-success">●</span> Agent is online{% else %}<span class="text-secondary">●</span> Chat closed{% endif %}';
+                reconnectAttempts = 0; // Reset reconnect counter on successful connection
+                chatInput.disabled = false;
+                chatForm.querySelector('button').disabled = false;
+            };
+            
+            chatSocket.onmessage = function(e) {
+                debugLog("WebSocket message received:", e.data);
+                try {
+                    const data = JSON.parse(e.data);
+                    
+                    if (data.type === 'error') {
+                        debugLog("WebSocket error message:", data.message);
+                        alert(data.message);
+                        return;
+                    }
+                    
+                    // Handle status updates
+                    if (data.type === 'status_update') {
+                        debugLog("Status update received:", data.status);
+                        handleStatusUpdate(data.status);
+                        return;
+                    }
+                    
+                    // Add message to chat
+                    addMessage(data);
+                    
+                    // Auto-scroll
+                    scrollToBottom();
+                } catch (error) {
+                    debugLog("Error parsing WebSocket message:", error);
+                }
+            };
+            
+            chatSocket.onclose = function(e) {
+                debugLog('Chat socket closed unexpectedly', e);
+                clearTimeout(connectionTimeout);
+                
+                if (e.code === 1000) {
+                    // Normal closure, don't reconnect
+                    statusIndicator.innerHTML = '<span class="text-secondary">●</span> Chat ended';
+                    chatInput.disabled = true;
+                    chatForm.querySelector('button').disabled = true;
+                    return;
+                }
+                
+                statusIndicator.innerHTML = '<span class="text-danger">●</span> Connection lost (reconnecting...)';
+                chatInput.disabled = true;
+                chatForm.querySelector('button').disabled = true;
+                
+                // Try to reconnect with increasing backoff
+                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    const backoff = Math.min(3000, 1000 * Math.pow(2, reconnectAttempts));
+                    reconnectAttempts++;
+                    debugLog(`Reconnecting in ${backoff}ms... (Attempt ${reconnectAttempts} of ${MAX_RECONNECT_ATTEMPTS})`);
+                    
+                    clearTimeout(reconnectTimeout);
+                    reconnectTimeout = setTimeout(initWebSocket, backoff);
+                } else {
+                    statusIndicator.innerHTML = '<span class="text-danger">●</span> Connection lost (reload page to try again)';
+                    alert("Connection to chat server lost. Please refresh the page to try again.");
+                    debugLog("Maximum reconnection attempts reached");
+                }
+            };
+            
+            chatSocket.onerror = function(e) {
+                debugLog('WebSocket error:', e);
+                statusIndicator.innerHTML = '<span class="text-danger">●</span> Connection error';
+            };
+        } catch (error) {
+            debugLog("Error creating WebSocket:", error);
+            statusIndicator.innerHTML = '<span class="text-danger">●</span> Connection error';
+            alert("Error connecting to chat server: " + error.message);
+        }
+    }
+    
+    // Function to insert quick reply text
+    function insertQuickReply(text) {
+        chatInput.value = text;
+        chatInput.focus();
+    }
+    
+    // Scroll to bottom of messages
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    // Add a new message to the chat
+    function addMessage(data) {
+        console.log("Adding message to chat:", data);
+        const messageDiv = document.createElement('div');
+        
+        if (data.type === 'system') {
+            messageDiv.className = 'message message-system';
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${data.message}
+                </div>
+                <div class="message-time text-center">
+                    <small>${new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                </div>
+            `;
+        } else {
+            // Determine message type (user vs agent)
+            const isAgentMessage = data.is_agent === true;
+            console.log(`Message is from: ${isAgentMessage ? 'Agent' : 'Customer'}, Username: ${data.username}, is_agent: ${data.is_agent}`);
+            
+            messageDiv.className = `message ${isAgentMessage ? 'message-agent' : 'message-user'}`;
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    ${data.username} • ${new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </div>
+                <div class="message-bubble">
+                    ${data.message}
+                </div>
+            `;
+        }
+        
+        // Add message to DOM and ensure visibility
+        messagesContainer.appendChild(messageDiv);
+        messageDiv.style.display = data.type === 'system' ? 'block' : 'flex';
+        messageDiv.style.opacity = '1';
+        messageDiv.style.visibility = 'visible';
+        
+        console.log("Message added, container now contains", messagesContainer.children.length, "messages");
+        
+        // Auto-scroll
+        scrollToBottom();
+    }
+    
+    // Send a message when the form is submitted
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Check if the WebSocket is open
+        if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+            console.error("WebSocket not connected, can't send message");
+            statusIndicator.innerHTML = '<span class="text-danger">●</span> Connection lost (trying to reconnect...)';
+            initWebSocket(); // Try to reconnect
+            return;
+        }
+        
+        const message = chatInput.value.trim();
+        if (message) {
+            console.log("Sending message:", message);
+            // Generate a client-side message ID for tracking
+            const clientMessageId = `client-${Date.now()}-${clientMessageCounter++}`;
+            
+            const messageData = {
+                'type': 'message',
+                'message': message,
+                'username': '{{ username }}',
+                'is_agent': true,
+                'client_message_id': clientMessageId
+            };
+            
+            try {
+                chatSocket.send(JSON.stringify(messageData));
+                console.log("Message sent:", messageData);
+                
+                // Add message ID to tracking set to prevent duplicate display
+                sentMessageIds.add(clientMessageId);
+                
+                // DO NOT display message locally - wait for server echo to avoid duplicates
+                
+                chatInput.value = '';
+            } catch (error) {
+                console.error("Error sending message:", error);
+                alert("Error sending message. Please try again.");
+            }
+        }
+    });
+    
+    // End chat button handler
+    endChatBtn.addEventListener('click', function() {
+        const confirmClose = confirm('Are you sure you want to end this chat?');
+        if (confirmClose) {
+            debugLog('End chat button clicked, sending close_chat message');
+            
+            // Disable inputs immediately for better UX
+            chatInput.disabled = true;
+            chatForm.querySelector('button').disabled = true;
+            endChatBtn.disabled = true;
+            
+            // Show closing message
+            addMessage({
+                type: 'system',
+                message: 'Closing chat session...',
+                timestamp: new Date().toISOString()
+            });
+            
+            // Check if WebSocket is connected
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                // Send close chat message via WebSocket
+                chatSocket.send(JSON.stringify({
+                    'type': 'close_chat',
+                    'message': 'Agent closed the chat'
+                }));
+            }
+            
+            // Use API to close the chat
+            fetch('/livechat/close-chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ chat_id: chatId })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    console.log("Chat closed successfully");
+                    statusIndicator.innerHTML = '<span class="text-secondary">●</span> Chat closed';
+                    
+                    // Disable inputs permanently
+                    chatInput.disabled = true;
+                    chatForm.querySelector('button').disabled = true;
+                    endChatBtn.disabled = true;
+                    
+                    // Add system message
+                    addMessage({
+                        type: 'system',
+                        message: 'Chat has been closed.',
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    // Update URL to show chat is closed
+                    const newUrl = new URL(window.location.href);
+                    if (!newUrl.searchParams.has('closed')) {
+                        newUrl.searchParams.append('closed', 'true');
+                        window.history.replaceState({}, '', newUrl.toString());
+                    }
+                } else {
+                    console.error("Failed to close chat:", data.error || "Unknown error");
+                    alert("Failed to close chat: " + (data.error || "Unknown error"));
+                    
+                    // Re-enable inputs
+                    chatInput.disabled = false;
+                    chatForm.querySelector('button').disabled = false;
+                    endChatBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error("Error closing chat:", error);
+                alert("There was an error closing the chat. Please try again.");
+                
+                // Re-enable inputs
+                chatInput.disabled = false;
+                chatForm.querySelector('button').disabled = false;
+                endChatBtn.disabled = false;
+            });
+        }
+    });
+    
+    // Update chat duration
+    function updateChatDuration() {
+        const startTime = new Date("{{ chat_session.started_at|date:'c' }}");
+        const now = new Date();
+        const diffInMs = now - startTime;
+        
+        const diffInMinutes = Math.floor(diffInMs / 60000);
+        const hours = Math.floor(diffInMinutes / 60);
+        const minutes = diffInMinutes % 60;
+        
+        const durationElement = document.getElementById('chat-duration');
+        if (durationElement) {
+            if (hours > 0) {
+                durationElement.textContent = `${hours}h ${minutes}m`;
+            } else {
+                durationElement.textContent = `${minutes}m`;
+            }
+        }
+    }
+    
+    // Initialize everything
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize WebSocket
+        initWebSocket();
+        
+        // Scroll to bottom on load
+        scrollToBottom();
+        
+        // Start updating chat duration
+        updateChatDuration();
+        setInterval(updateChatDuration, 60000); // Update every minute
+        
+        // Set up notes form
+        const notesForm = document.getElementById('notes-form');
+        if (notesForm) {
+            notesForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const notes = document.getElementById('agent-notes').value;
+                
+                fetch('/livechat/update-notes/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        notes: notes
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Notes saved successfully');
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while saving notes');
+                });
+            });
+        }
+    });
+    
+    // Helper function to handle status updates
+    function handleStatusUpdate(status) {
+        switch(status) {
+            case 'waiting':
+                statusIndicator.innerHTML = '<span class="text-warning">●</span> Waiting for agent';
+                break;
+            case 'active':
+                statusIndicator.innerHTML = '<span class="text-success">●</span> Chat active';
+                break;
+            case 'closed':
+                statusIndicator.innerHTML = '<span class="text-secondary">●</span> Chat closed';
+                chatInput.disabled = true;
+                chatForm.querySelector('button').disabled = true;
+                break;
+            default:
+                break;
+        }
+    }
+    
+    // Helper to update status 
+    function updateStatus(status) {
+        handleStatusUpdate(status);
+    }
+</script>
+{% endblock %} 

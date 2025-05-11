@@ -1,0 +1,18 @@
+<li class="list-group-item d-flex justify-content-between">
+    <span>Subtotal</span>
+    <span>${{ order.subtotal|floatformat:2 }}</span>
+</li>
+<li class="list-group-item d-flex justify-content-between">
+    <span>Shipping Fee</span>
+    <span>${{ order.shipping_fee|floatformat:2 }}</span>
+</li>
+{% if order.voucher %}
+<li class="list-group-item d-flex justify-content-between text-success">
+    <span>Voucher Discount ({{ order.voucher.voucher.code }})</span>
+    <span>-${{ order.voucher_discount|floatformat:2 }}</span>
+</li>
+{% endif %}
+<li class="list-group-item d-flex justify-content-between">
+    <strong>Total Price</strong>
+    <strong>${{ order.total_price|floatformat:2 }}</strong>
+</li> 

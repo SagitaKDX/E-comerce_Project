@@ -1,0 +1,185 @@
+<!-- custom_admin/templates/custom_admin/users/list.html -->
+{% extends 'custom_admin/base.html' %}
+
+{% block title %}Users - E-Shop Admin{% endblock %}
+
+{% block page_title %}Users{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'admin_dashboard:admin_user_add' %}" class="btn btn-sm btn-primary">
+    <i class="fas fa-plus me-1"></i> Add User
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Search and Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="search" placeholder="Search users..." value="{{ search_query }}">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="staff" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Users</option>
+                    <option value="staff" {% if staff_filter == 'staff' %}selected{% endif %}>Staff Only</option>
+                    <option value="customers" {% if staff_filter == 'customers' %}selected{% endif %}>Customers Only</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="role" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Roles</option>
+                    {% for role_code, role_name in roles %}
+                    <option value="{{ role_code }}" {% if role_filter == role_code %}selected{% endif %}>{{ role_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>
+                            <a href="{% url 'admin_dashboard:admin_user_detail' user.id %}" class="fw-bold text-primary">
+                                {{ user.username }}
+                            </a>
+                        </td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.get_full_name }}</td>
+                        <td>
+                            {% if user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.profile.role == 'admin' %}
+                                <span class="badge bg-danger">Admin</span>
+                            {% elif user.profile.role == 'staff' %}
+                                <span class="badge bg-primary">Staff</span>
+                            {% elif user.profile.role == 'csr' %}
+                                <span class="badge bg-info">CSR</span>
+                            {% elif user.profile.role == 'crm_user' %}
+                                <span class="badge bg-warning">CRM User</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Customer</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'admin_dashboard:admin_user_detail' user.id %}" class="btn btn-sm btn-info" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'admin_dashboard:admin_user_edit' user.id %}" class="btn btn-sm btn-primary" title="Edit User">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'admin_dashboard:admin_user_password_reset' user.id %}" class="btn btn-sm btn-warning" title="Reset Password">
+                                <i class="fas fa-key"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center">No users found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if users.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if users.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ users.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% for num in users.paginator.page_range %}
+                    {% if users.number == num %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                    {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if users.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ users.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ users.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

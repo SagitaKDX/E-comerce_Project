@@ -1,0 +1,44 @@
+<!-- custom_admin/templates/custom_admin/categories/delete.html -->
+{% extends 'custom_admin/base.html' %}
+
+{% block title %}Delete Category - E-Shop Admin{% endblock %}
+
+{% block page_title %}Delete Category{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'admin_dashboard:admin_categories' %}" class="btn btn-sm btn-secondary">
+    <i class="fas fa-arrow-left me-1"></i> Back to Categories
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-body text-center">
+        <h4 class="mb-4">Are you sure you want to delete this category?</h4>
+        
+        <div class="mb-4">
+            <h5>{{ category.name }}</h5>
+            {% if category.image %}
+                <img src="{{ category.image.url }}" alt="{{ category.name }}" class="img-thumbnail mb-2" style="max-height: 200px;">
+            {% endif %}
+            <p class="text-muted">This category contains {{ category.product_set.count }} products.</p>
+        </div>
+        
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            This action cannot be undone. The category will be permanently deleted.
+            {% if category.product_set.count > 0 %}
+                <strong>Warning:</strong> All products in this category will be left without a category.
+            {% endif %}
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash me-1"></i> Yes, Delete Category
+            </button>
+            <a href="{% url 'admin_dashboard:admin_categories' %}" class="btn btn-secondary ms-2">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

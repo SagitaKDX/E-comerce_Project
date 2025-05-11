@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order Successful - E-Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .order-success-container {
+        padding: 3rem 0;
+    }
+    .order-success-card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        text-align: center;
+        padding: 3rem 2rem;
+        margin-bottom: 2rem;
+    }
+    .success-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background-color: #28a745;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem auto;
+        color: white;
+        font-size: 2.5rem;
+    }
+    .order-success-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+    .order-number {
+        font-weight: 600;
+        color: #dc3545;
+        margin-bottom: 1.5rem;
+    }
+    .order-success-message {
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+    .order-info-card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .order-info-title {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .order-info-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    .order-info-label {
+        color: #6c757d;
+    }
+    .order-info-value {
+        font-weight: 500;
+    }
+    .order-items {
+        margin-top: 1.5rem;
+    }
+    .order-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .order-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    .order-item-img {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin-right: 1rem;
+    }
+    .order-item-details {
+        flex: 1;
+    }
+    .order-item-name {
+        font-weight: 500;
+    }
+    .order-item-price {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .order-item-quantity {
+        margin-left: 0.5rem;
+        background-color: #f0f0f0;
+        padding: 0.2rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.8rem;
+    }
+    .order-item-total {
+        font-weight: 600;
+    }
+    .btn-continue-shopping {
+        background-color: #dc3545;
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.8rem 2rem;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+    }
+    .btn-continue-shopping:hover {
+        background-color: #c82333;
+        color: white;
+    }
+    .btn-view-order {
+        background-color: transparent;
+        border: 1px solid #6c757d;
+        color: #6c757d;
+        font-weight: 600;
+        padding: 0.8rem 2rem;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+    }
+    .btn-view-order:hover {
+        background-color: #6c757d;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container order-success-container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="order-success-card">
+                <div class="success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h1 class="order-success-title">Thank You for Your Order!</h1>
+                <p class="order-number">Order #{{ order.id }}</p>
+                <p class="order-success-message">Your order has been placed successfully. We will process it as soon as possible.</p>
+                <p>A confirmation email has been sent to <strong>{{ order.user.email }}</strong></p>
+                
+                <div class="mt-4 d-flex justify-content-center">
+                    <a href="{% url 'product_list' %}" class="btn btn-continue-shopping me-3">
+                        <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
+                    </a>
+                    <a href="{% url 'order_detail' order_id=order.id %}" class="btn btn-view-order">
+                        <i class="fas fa-eye me-2"></i>View Order
+                    </a>
+                </div>
+            </div>
+            
+            <div class="order-info-card">
+                <h4 class="order-info-title">Order Details</h4>
+                
+                <div class="order-info-row">
+                    <span class="order-info-label">Order Date:</span>
+                    <span class="order-info-value">{{ order.created_at|date:"F j, Y, g:i a" }}</span>
+                </div>
+                
+                <div class="order-info-row">
+                    <span class="order-info-label">Payment Method:</span>
+                    <span class="order-info-value">{{ order.payment_method }}</span>
+                </div>
+                
+                <div class="order-info-row">
+                    <span class="order-info-label">Shipping Address:</span>
+                    <span class="order-info-value">
+                        {{ order.shipping_address.address_line1 }}, 
+                        {{ order.shipping_address.city }}, 
+                        {{ order.shipping_address.state }} 
+                        {{ order.shipping_address.postal_code }}
+                    </span>
+                </div>
+                
+                {% if order.phone_number %}
+                <div class="order-info-row">
+                    <span class="order-info-label">Phone Number:</span>
+                    <span class="order-info-value">{{ order.phone_number }}</span>
+                </div>
+                {% endif %}
+                
+                <h5 class="mt-4 mb-3">Order Summary</h5>
+                
+                <div class="order-items">
+                    {% for item in order.items.all %}
+                    <div class="order-item">
+                        {% if item.product.image %}
+                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="order-item-img">
+                        {% else %}
+                        <img src="https://via.placeholder.com/50x50?text=No+Image" alt="{{ item.product.name }}" class="order-item-img">
+                        {% endif %}
+                        
+                        <div class="order-item-details">
+                            <div class="order-item-name">{{ item.product.name }}</div>
+                            <div class="order-item-price">${{ item.price }} <span class="order-item-quantity">× {{ item.quantity }}</span></div>
+                        </div>
+                        
+                        <div class="order-item-total">${{ item.total_price }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mt-4">
+                    <div class="order-info-row">
+                        <span class="order-info-label">Subtotal:</span>
+                        <span class="order-info-value">${{ order.subtotal }}</span>
+                    </div>
+                    
+                    <div class="order-info-row">
+                        <span class="order-info-label">Shipping:</span>
+                        <span class="order-info-value">${{ order.shipping_fee }}</span>
+                    </div>
+                    
+                    {% if order.voucher %}
+                    <div class="order-info-row">
+                        <span class="order-info-label">Discount ({{ order.voucher.code }}):</span>
+                        <span class="order-info-value text-success">-${{ order.voucher_discount }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="order-info-row mt-2" style="font-weight: 700;">
+                        <span>Total:</span>
+                        <span>${{ order.total_price }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

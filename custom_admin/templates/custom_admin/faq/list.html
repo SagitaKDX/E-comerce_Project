@@ -1,0 +1,134 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}FAQ Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">FAQ Management</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">FAQs</li>
+    </ol>
+    
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-question-circle me-1"></i>
+                Frequently Asked Questions
+            </div>
+            <a href="{% url 'admin_dashboard:faq_create' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Add New FAQ
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <form method="get" class="d-flex">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="Search FAQs..." value="{{ search_term }}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    {% if search_term %}
+                        <a href="{% url 'admin_dashboard:faq_list' %}" class="btn btn-outline-secondary ms-2">Clear</a>
+                    {% endif %}
+                </form>
+            </div>
+            
+            {% if faqs %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Title</th>
+                                <th>Order</th>
+                                <th>Status</th>
+                                <th>Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for faq in faqs %}
+                                <tr>
+                                    <td>{{ faq.title }}</td>
+                                    <td>{{ faq.order }}</td>
+                                    <td>
+                                        {% if faq.is_published %}
+                                            <span class="badge bg-success">Published</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Draft</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ faq.updated_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'admin_dashboard:faq_preview' faq.pk %}" class="btn btn-info btn-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'admin_dashboard:faq_edit' faq.pk %}" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'admin_dashboard:faq_delete' faq.pk %}" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if faqs.has_other_pages %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if faqs.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ faqs.previous_page_number }}{% if search_term %}&search={{ search_term }}{% endif %}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">&laquo;</span>
+                                </li>
+                            {% endif %}
+                            
+                            {% for i in faqs.paginator.page_range %}
+                                {% if faqs.number == i %}
+                                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ i }}{% if search_term %}&search={{ search_term }}{% endif %}">{{ i }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if faqs.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ faqs.next_page_number }}{% if search_term %}&search={{ search_term }}{% endif %}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">&raquo;</span>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    {% if search_term %}
+                        No FAQs found matching "{{ search_term }}". <a href="{% url 'admin_dashboard:faq_list' %}">View all FAQs</a>
+                    {% else %}
+                        No FAQs have been created yet. <a href="{% url 'admin_dashboard:faq_create' %}">Create your first FAQ</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

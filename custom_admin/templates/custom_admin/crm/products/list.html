@@ -1,0 +1,118 @@
+{% extends 'custom_admin/crm/base.html' %}
+
+{% block title %}Products | CRM System{% endblock %}
+
+{% block page_title %}Products{% endblock %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Product List</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                        <th>Sales</th>
+                        <th>Rating</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if product.image %}
+                                    <img src="{{ product.image.url }}" alt="{{ product.name }}" width="40" height="40" class="rounded me-2">
+                                {% endif %}
+                                <div>
+                                    <div class="fw-bold">{{ product.name }}</div>
+                                    <small class="text-muted">{{ product.description|truncatechars:50 }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ product.category.name }}</td>
+                        <td>${{ product.price }}</td>
+                        <td>
+                            <span class="badge {% if product.stock > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ product.stock }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge {% if product.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ product.is_active|yesno:"Active,Inactive" }}
+                            </span>
+                        </td>
+                        <td>{{ product.sold_count }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="rating-stars me-2">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= product.avg_rating %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-warning"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span>{{ product.avg_rating|floatformat:1 }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <a href="{% url 'crm:crm_product_detail' product.id %}" class="btn btn-sm btn-info">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center">No products found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if products.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if products.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for i in products.paginator.page_range %}
+                    {% if products.number == i %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ i }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if products.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

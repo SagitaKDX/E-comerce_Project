@@ -1,0 +1,741 @@
+{% load static %}
+
+<div id="floating-chat-widget" class="floating-chat-widget">
+    <!-- Chat Icon Button -->
+    <div id="chat-toggle-btn" class="chat-toggle-btn">
+        <div class="chat-icon">
+            <i class="fas fa-comments"></i>
+        </div>
+    </div>
+
+    <!-- Chat Panel -->
+    <div id="chat-panel" class="chat-panel">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <div class="chat-title">Support</div>
+                <div class="chat-subtitle">Live Chat</div>
+            </div>
+            <div class="chat-header-actions">
+                <button id="chat-minimize-btn" class="chat-btn" aria-label="Minimize chat">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button id="chat-close-btn" class="chat-btn" aria-label="Close chat">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Body -->
+        <div id="chat-body" class="chat-body">
+            <!-- Chat states: initial, subject-selection, waiting, chat-active -->
+
+            <!-- Initial welcome state -->
+            <div id="initial-welcome" class="chat-state active">
+                <div class="welcome-message">
+                    <div class="welcome-icon">
+                        <i class="far fa-comments"></i>
+                    </div>
+                    <h2 class="welcome-title">Need Help?</h2>
+                    <p class="welcome-text">Our support team is here to assist you with any questions or issues. Start a chat with us for real-time support. <strong>For your privacy, all messages will be deleted when you close this chat.</strong></p>
+                    <button class="welcome-btn" id="welcome-start-chat-btn">Start Chat</button>
+                </div>
+            </div>
+
+            <!-- Subject selection state -->
+            <div id="subject-selection" class="chat-state">
+                <div class="subject-container">
+                    <h3 class="subject-title">What can we help you with?</h3>
+                    <form id="subject-form" class="subject-form">
+                        {% csrf_token %}
+                        <div class="subject-options">
+                            <div class="subject-option">
+                                <input type="radio" id="subject-general" name="subject" value="General Inquiry" checked>
+                                <label for="subject-general">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>General Inquiry</span>
+                                </label>
+                            </div>
+                            <div class="subject-option">
+                                <input type="radio" id="subject-order" name="subject" value="Order Support">
+                                <label for="subject-order">
+                                    <i class="fas fa-shopping-bag"></i>
+                                    <span>Order Support</span>
+                                </label>
+                            </div>
+                            <div class="subject-option">
+                                <input type="radio" id="subject-product" name="subject" value="Product Question">
+                                <label for="subject-product">
+                                    <i class="fas fa-box"></i>
+                                    <span>Product Question</span>
+                                </label>
+                            </div>
+                            <div class="subject-option">
+                                <input type="radio" id="subject-technical" name="subject" value="Technical Support">
+                                <label for="subject-technical">
+                                    <i class="fas fa-cogs"></i>
+                                    <span>Technical Support</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {% if not user.is_authenticated %}
+                        <div class="chat-input-group">
+                            <label for="chat-email">Your Email Address:</label>
+                            <input type="email" id="chat-email" name="email" class="chat-form-control" required placeholder="Enter your email">
+                        </div>
+                        {% endif %}
+
+                        <button type="submit" id="submit-subject-btn" class="submit-subject-btn">
+                            Start Chat
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Waiting for agent state -->
+            <div id="waiting-state" class="chat-state">
+                <div class="waiting-container">
+                    <div class="waiting-animation">
+                        <div class="dot-pulse"></div>
+                    </div>
+                    <h3 class="waiting-title">Connecting to an agent</h3>
+                    <p class="waiting-text">Please wait while we connect you with a support agent.</p>
+                    <div class="waiting-info">
+                        <div class="waiting-time">
+                            <i class="fas fa-clock"></i>
+                            <span>Average wait time: <strong>2 minutes</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat active state -->
+            <div id="chat-active" class="chat-state">
+                <!-- Connection status indicator - Added -->
+                <div id="chat-connection-status" class="connection-status" style="display: none;">
+                    <div class="status-indicator waiting"></div>
+                    <div class="status-text">Connecting...</div>
+                </div>
+                
+                <div id="chat-messages" class="chat-messages">
+                    <!-- Messages will be added here dynamically -->
+                </div>
+
+                <!-- Chat input -->
+                <div class="chat-input-container" style="display: block !important; visibility: visible !important; opacity: 1 !important;">
+                    <form id="chat-message-form" class="chat-form" style="display: flex !important; visibility: visible !important; opacity: 1 !important;">
+                        <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..." autocomplete="off" style="display: block !important; visibility: visible !important; opacity: 1 !important;">
+                        <button type="submit" id="chat-send-btn" class="chat-send-btn" style="display: flex !important; visibility: visible !important; opacity: 1 !important;">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Critical styles for visibility that must never be overridden */
+#chat-active.active {
+    display: flex;
+    flex-direction: column;
+    visibility: visible;
+    opacity: 1;
+    height: 100%;
+    z-index: 9999;
+    position: relative;
+}
+
+#chat-active.active .chat-messages {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex: 1;
+}
+
+#chat-active.active .chat-input-container {
+    display: block;
+    visibility: visible;
+    opacity: 1;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-top: 1px solid #e9ecef;
+    margin-top: auto;
+    position: relative;
+    z-index: 10000;
+}
+
+#chat-active.active #chat-message-form {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    width: 100%;
+    position: relative;
+    z-index: 10001;
+}
+
+#chat-active.active #chat-input {
+    flex: 1;
+    display: block;
+    min-height: 36px;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 18px;
+    position: relative;
+    z-index: 10002;
+}
+
+#chat-active.active #chat-send-btn {
+    display: flex;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #0084ff;
+    color: white;
+    border: none;
+    padding: 0;
+    position: relative;
+    z-index: 10002;
+}
+
+/* Fix specifically for message display */
+.message {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+    max-width: 80%;
+    padding: 5px;
+}
+
+.message-bubble {
+    padding: 10px 15px;
+    border-radius: 18px;
+    word-break: break-word;
+    display: inline-block;
+}
+
+.message-user {
+    align-self: flex-end;
+}
+
+.message-agent, .message-system {
+    align-self: flex-start;
+}
+
+.message-user .message-bubble {
+    background-color: #0084ff;
+    color: white;
+}
+
+.message-agent .message-bubble {
+    background-color: #e9ecef;
+    color: #212529;
+}
+
+.message-system .message-bubble {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Regular styles */
+.floating-chat-widget {
+    position: fixed;
+    bottom: 70px;
+    right: 20px;
+    z-index: 9999;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.chat-toggle-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #0084ff;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    z-index: 10000;
+}
+
+.chat-toggle-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.chat-icon {
+    font-size: 24px;
+}
+
+.chat-panel {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 350px;
+    height: 500px;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 40px rgba(0, 0, 0, 0.2);
+    display: none; /* Initially hidden */
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 9999;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+}
+
+.chat-panel.active {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.chat-header {
+    padding: 15px;
+    background-color: #0084ff;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    flex-shrink: 0;
+}
+
+.chat-title {
+    font-weight: bold;
+    font-size: 1rem;
+    margin-bottom: 2px;
+}
+
+.chat-subtitle {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+.chat-header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.chat-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.chat-body {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Chat States */
+.chat-state {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 15px;
+    overflow-y: auto;
+    background-color: white;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.chat-state.active {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    opacity: 1;
+    visibility: visible;
+    z-index: 999;
+    height: 100%;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Welcome State */
+.welcome-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 100%;
+    padding: 20px;
+}
+
+.welcome-icon {
+    font-size: 48px;
+    color: #0084ff;
+    margin-bottom: 20px;
+}
+
+.welcome-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.welcome-text {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 30px;
+    line-height: 1.5;
+}
+
+.welcome-btn {
+    background-color: #0084ff;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(0, 132, 255, 0.3);
+}
+
+.welcome-btn:hover {
+    background-color: #0078e7;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 132, 255, 0.4);
+}
+
+/* Subject Selection */
+.subject-container {
+    padding: 15px 0;
+}
+
+.subject-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #333;
+}
+
+.subject-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.subject-option {
+    position: relative;
+}
+
+.subject-option input {
+    position: absolute;
+    opacity: 0;
+}
+
+.subject-option label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e0e0e0;
+    padding: 15px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+    height: 100%;
+}
+
+.subject-option label i {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: #0084ff;
+}
+
+.subject-option label span {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.subject-option input:checked + label {
+    border-color: #0084ff;
+    background-color: rgba(0, 132, 255, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 132, 255, 0.15);
+}
+
+.chat-input-group {
+    margin-bottom: 20px;
+}
+
+.chat-input-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #555;
+}
+
+.chat-form-control {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+}
+
+.chat-form-control:focus {
+    border-color: #0084ff;
+    outline: none;
+}
+
+.submit-subject-btn {
+    background-color: #0084ff;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.submit-subject-btn:hover {
+    background-color: #0078e7;
+}
+
+/* Waiting State */
+.waiting-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 100%;
+    padding: 30px;
+}
+
+.waiting-animation {
+    margin-bottom: 25px;
+}
+
+.dot-pulse {
+    position: relative;
+    left: -9999px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #0084ff;
+    color: #0084ff;
+    box-shadow: 9999px 0 0 -5px;
+    animation: dot-pulse 1.5s infinite linear;
+    animation-delay: 0.25s;
+}
+
+.dot-pulse::before, .dot-pulse::after {
+    content: '';
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #0084ff;
+    color: #0084ff;
+}
+
+.dot-pulse::before {
+    box-shadow: 9984px 0 0 -5px;
+    animation: dot-pulse-before 1.5s infinite linear;
+    animation-delay: 0s;
+}
+
+.dot-pulse::after {
+    box-shadow: 10014px 0 0 -5px;
+    animation: dot-pulse-after 1.5s infinite linear;
+    animation-delay: 0.5s;
+}
+
+@keyframes dot-pulse-before {
+    0% { box-shadow: 9984px 0 0 -5px; }
+    30% { box-shadow: 9984px 0 0 2px; }
+    60%, 100% { box-shadow: 9984px 0 0 -5px; }
+}
+
+@keyframes dot-pulse {
+    0% { box-shadow: 9999px 0 0 -5px; }
+    30% { box-shadow: 9999px 0 0 2px; }
+    60%, 100% { box-shadow: 9999px 0 0 -5px; }
+}
+
+@keyframes dot-pulse-after {
+    0% { box-shadow: 10014px 0 0 -5px; }
+    30% { box-shadow: 10014px 0 0 2px; }
+    60%, 100% { box-shadow: 10014px 0 0 -5px; }
+}
+
+.waiting-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.waiting-text {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.waiting-info {
+    background-color: #f8f9fa;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #666;
+}
+
+.waiting-time {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Notification indicator */
+.chat-toggle-btn.has-notification::after {
+    content: attr(data-count);
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    min-width: 22px;
+    height: 22px;
+    background-color: #ff3b30;
+    border-radius: 50%;
+    border: 2px solid white;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(255, 59, 48, 0.4);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .chat-panel {
+        width: 90%;
+        height: 70vh;
+        bottom: 80px;
+        right: 5%;
+        left: 5%;
+    }
+}
+
+/* Added connection status styling */
+.connection-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #666;
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-indicator.waiting {
+    background-color: #ffc107;
+    animation: pulse 1.5s infinite;
+}
+
+.status-indicator.connected {
+    background-color: #28a745;
+}
+
+.status-indicator.disconnected {
+    background-color: #dc3545;
+}
+
+.reconnect-btn {
+    margin-left: 10px;
+    padding: 4px 8px;
+    background-color: #0084ff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.reconnect-btn:hover {
+    background-color: #0078e7;
+}
+</style>

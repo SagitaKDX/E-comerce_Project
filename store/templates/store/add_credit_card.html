@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Payment Method{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Add Credit Card</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.card_holder.id_for_label }}" class="form-label">Cardholder Name</label>
+                            {{ form.card_holder }}
+                            {% if form.card_holder.errors %}
+                                <div class="text-danger">{{ form.card_holder.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.card_number.id_for_label }}" class="form-label">Card Number</label>
+                            {{ form.card_number }}
+                            {% if form.card_number.errors %}
+                                <div class="text-danger">{{ form.card_number.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label for="{{ form.cvv.id_for_label }}" class="form-label">CVV</label>
+                                {{ form.cvv }}
+                                {% if form.cvv.errors %}
+                                    <div class="text-danger">{{ form.cvv.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.expiry_month.id_for_label }}" class="form-label">Month</label>
+                                {{ form.expiry_month }}
+                                {% if form.expiry_month.errors %}
+                                    <div class="text-danger">{{ form.expiry_month.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-5">
+                                <label for="{{ form.expiry_year.id_for_label }}" class="form-label">Year</label>
+                                {{ form.expiry_year }}
+                                {% if form.expiry_year.errors %}
+                                    <div class="text-danger">{{ form.expiry_year.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            {{ form.is_default }}
+                            <label class="form-check-label" for="{{ form.is_default.id_for_label }}">
+                                Set as default payment method
+                            </label>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'profile' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save Card</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

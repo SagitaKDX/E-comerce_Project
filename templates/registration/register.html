@@ -1,0 +1,416 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - E-Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .register-container {
+        max-width: 450px;
+        margin: 0 auto;
+    }
+    .card {
+        border: none;
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .card-header {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        text-align: center;
+        padding: 1.5rem;
+    }
+    .card-body {
+        padding: 2rem;
+    }
+    .form-floating label {
+        color: #666;
+    }
+    .form-control:focus {
+        border-color: #2575fc;
+        box-shadow: 0 0 0 0.25rem rgba(37, 117, 252, 0.1);
+    }
+    .social-auth-btn {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 15px;
+        border: none;
+        border-radius: 50px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .social-auth-btn i {
+        margin-right: 10px;
+        font-size: 1.2rem;
+    }
+    .google-btn {
+        background-color: #fff;
+        color: #757575;
+        border: 1px solid #ddd;
+    }
+    .google-btn:hover {
+        background-color: #f8f9fa;
+        color: #333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 20px 0;
+        color: #757575;
+    }
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #ddd;
+    }
+    .divider span {
+        padding: 0 10px;
+        font-size: 0.9rem;
+    }
+    .btn-primary {
+        background-color: #2575fc;
+        border: none;
+        padding: 12px;
+        font-weight: 500;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        background-color: #1a68e5;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .oauth-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+    }
+    .form-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    .auth-method {
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .auth-method-header {
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .auth-method-header i {
+        margin-right: 10px;
+        font-size: 20px;
+        color: #2575fc;
+    }
+    .auth-method-description {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 15px;
+    }
+    
+    /* Mobile Responsiveness */
+    @media (max-width: 576px) {
+        .card-body {
+            padding: 1.25rem;
+        }
+        
+        .auth-method {
+            padding: 15px;
+        }
+        
+        .row {
+            margin-left: -10px;
+            margin-right: -10px;
+        }
+        
+        .col-md-6 {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+        
+        .form-text ul {
+            padding-left: 1.2rem;
+        }
+        
+        .form-text ul li {
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .card-header {
+            padding: 1.25rem 1rem;
+        }
+        
+        .card-header h3 {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="register-container">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-user-plus me-2"></i>Create Account</h3>
+                <p class="mb-0 text-white-50">Join E-Shop to start shopping</p>
+            </div>
+            <div class="card-body">
+                <!-- Google Auth Method -->
+                <div class="auth-method">
+                    <div class="auth-method-header">
+                        <i class="fab fa-google"></i> Sign up with Google
+                    </div>
+                    <div class="auth-method-description">
+                        Quick signup with your Google account. Your email will be automatically verified, and your account will be activated instantly.
+                    </div>
+                    <a href="{% url 'social:begin' 'google-oauth2' %}" class="social-auth-btn google-btn" id="google-signin-btn">
+                        <svg class="oauth-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px">
+                            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                        </svg>
+                        Continue with Google
+                    </a>
+                    
+                    <!-- Mobile Device Warning -->
+                    <div id="mobile-oauth-warning" style="display: none; margin-top: 10px; font-size: 0.85rem; color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 4px; text-align: left;">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Google sign-in may not work properly on some mobile browsers due to security restrictions. If you encounter issues, please use email registration instead.
+                    </div>
+                </div>
+                
+                <div class="divider">
+                    <span>or</span>
+                </div>
+                
+                <!-- Email Auth Method -->
+                <div class="auth-method">
+                    <div class="auth-method-header">
+                        <i class="fas fa-envelope"></i> Sign up with Email
+                    </div>
+                    <div class="auth-method-description">
+                        Create a new account using your email address. You'll need to verify your email before your account is activated.
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" name="first_name" id="id_first_name" class="form-control {% if form.first_name.errors %}is-invalid{% endif %}" placeholder="First Name" value="{{ form.first_name.value|default:'' }}">
+                                    <label for="id_first_name">First Name</label>
+                                    {% if form.first_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.first_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" name="last_name" id="id_last_name" class="form-control {% if form.last_name.errors %}is-invalid{% endif %}" placeholder="Last Name" value="{{ form.last_name.value|default:'' }}">
+                                    <label for="id_last_name">Last Name</label>
+                                    {% if form.last_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.last_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-floating mb-3">
+                            <input type="text" name="username" id="id_username" class="form-control {% if form.username.errors %}is-invalid{% endif %}" placeholder="Username" required value="{{ form.username.value|default:'' }}">
+                            <label for="id_username">Username</label>
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.username.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="form-text">This will be your unique identifier for login.</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-floating mb-3">
+                            <input type="email" name="email" id="id_email" class="form-control {% if form.email.errors %}is-invalid{% endif %}" placeholder="Email Address" required value="{{ form.email.value|default:'' }}">
+                            <label for="id_email">Email Address</label>
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="form-text">We'll send a verification email to this address.</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-floating mb-3">
+                            <input type="password" name="password1" id="id_password1" class="form-control {% if form.password1.errors %}is-invalid{% endif %}" placeholder="Password" required>
+                            <label for="id_password1">Password</label>
+                            {% if form.password1.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.password1.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="form-text password-requirements">
+                                    <ul class="mb-0 ps-3">
+                                        <li>Your password can't be too similar to your other personal information.</li>
+                                        <li>Your password must contain at least 8 characters.</li>
+                                        <li>Your password can't be a commonly used password.</li>
+                                        <li>Your password can't be entirely numeric.</li>
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-floating mb-3">
+                            <input type="password" name="password2" id="id_password2" class="form-control {% if form.password2.errors %}is-invalid{% endif %}" placeholder="Confirm Password" required>
+                            <label for="id_password2">Confirm Password</label>
+                            {% if form.password2.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.password2.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                            <label class="form-check-label" for="agreeTerms">
+                                I agree to the <a href="{% url 'terms_and_conditions' %}" class="text-decoration-none">Terms of Service</a> and Privacy Policy
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Create Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="text-center">
+                    <p>Already have an account? <a href="{% url 'login' %}" class="text-decoration-none fw-bold">
+                        <i class="fas fa-sign-in-alt me-1"></i>Login here
+                    </a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Password strength check
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordField = document.getElementById('id_password1');
+        const passwordFeedback = document.getElementById('password-strength');
+        
+        // If we're on the registration page with password field
+        if (passwordField && passwordFeedback) {
+            passwordField.addEventListener('input', function() {
+                const password = this.value;
+                let strength = 0;
+                let feedback = '';
+                
+                // Length check
+                if (password.length > 8) {
+                    strength += 1;
+                }
+                
+                // Character type checks
+                if (/[A-Z]/.test(password)) {
+                    strength += 1;
+                }
+                if (/[a-z]/.test(password)) {
+                    strength += 1;
+                }
+                if (/[0-9]/.test(password)) {
+                    strength += 1;
+                }
+                if (/[^A-Za-z0-9]/.test(password)) {
+                    strength += 1;
+                }
+                
+                // Update visual feedback
+                passwordFeedback.className = 'password-strength';
+                if (strength < 2) {
+                    passwordFeedback.classList.add('weak');
+                    feedback = 'Weak';
+                } else if (strength < 4) {
+                    passwordFeedback.classList.add('medium');
+                    feedback = 'Medium';
+                } else {
+                    passwordFeedback.classList.add('strong');
+                    feedback = 'Strong';
+                }
+                
+                passwordFeedback.innerText = feedback;
+            });
+        }
+    });
+    
+    // Detect mobile browsers
+    (function() {
+        var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+            var warningElement = document.getElementById('mobile-oauth-warning');
+            if (warningElement) {
+                warningElement.style.display = 'block';
+            }
+            
+            // Add click handler to Google sign-in button for mobile devices
+            var googleButton = document.getElementById('google-signin-btn');
+            if (googleButton) {
+                googleButton.addEventListener('click', function(e) {
+                    if (confirm('Google sign-in may not work properly on mobile browsers due to security restrictions.\n\nDo you want to:\n• Continue anyway (might not work)\n• Use email registration instead?')) {
+                        // User chose to continue, do nothing
+                    } else {
+                        // User chose not to continue
+                        e.preventDefault();
+                        // Focus on the first form field
+                        var firstInput = document.querySelector('form input[type="text"]');
+                        if (firstInput) {
+                            firstInput.focus();
+                        }
+                    }
+                });
+            }
+        }
+    })();
+</script>
+{% endblock %}

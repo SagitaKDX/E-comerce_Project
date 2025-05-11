@@ -1,0 +1,736 @@
+<!-- custom_admin/templates/custom_admin/analytics/overview.html -->
+{% extends 'custom_admin/base.html' %} {% block title %}Analytics - E-Shop
+Admin{% endblock %} {% block page_title %}Analytics Overview{% endblock %} 
+
+{% block extra_css %}
+<style>
+  .chart-area {
+    position: relative;
+    height: 300px;
+    width: 100%;
+  }
+  
+  .chart-loading-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+  
+  .chart-error-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .chart-pie {
+    position: relative;
+    height: 250px;
+  }
+  
+  .chart-bar {
+    position: relative;
+    height: 300px;
+  }
+  
+  #salesDropdown {
+    display: flex;
+    align-items: center;
+    color: #4e73df;
+    font-weight: 500;
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+  
+  #salesDropdown:hover {
+    color: #224abe;
+  }
+  
+  .dropdown-menu {
+    font-size: 0.85rem;
+  }
+  
+  .dropdown-item.active {
+    background-color: #4e73df;
+    color: white;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-12 mb-4">
+    <div class="card shadow">
+      <div
+        class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+      >
+        <h6 class="m-0 font-weight-bold text-primary">Sales Overview</h6>
+        <div class="dropdown no-arrow">
+          <a
+            class="dropdown-toggle"
+            href="#"
+            role="button"
+            id="salesDropdown"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <span id="currentPeriodDisplay">Monthly</span>
+            <i class="fas fa-ellipsis-v fa-sm fa-fw ml-2 text-gray-400"></i>
+          </a>
+          <div
+            class="dropdown-menu dropdown-menu-end shadow animated--fade-in"
+            aria-labelledby="salesDropdown"
+          >
+            <div class="dropdown-header">Time Period:</div>
+            <a
+              class="dropdown-item period-selector"
+              href="#"
+              data-period="daily"
+              data-display="Daily"
+              >Daily</a
+            >
+            <a
+              class="dropdown-item period-selector"
+              href="#"
+              data-period="weekly"
+              data-display="Weekly"
+              >Weekly</a
+            >
+            <a
+              class="dropdown-item period-selector active"
+              href="#"
+              data-period="monthly"
+              data-display="Monthly"
+              >Monthly</a
+            >
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chart-area">
+          <canvas id="salesChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-xl-6 col-lg-6 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Product Categories</h6>
+      </div>
+      <div class="card-body">
+        <div class="chart-pie">
+          <canvas id="categoryPieChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-6 col-lg-6 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Top Products</h6>
+      </div>
+      <div class="card-body">
+        <div class="chart-bar">
+          <canvas id="topProductsChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-xl-6 col-lg-6 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Package Sales</h6>
+      </div>
+      <div class="card-body">
+        <div class="chart-pie">
+          <canvas id="packageSalesChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-6 col-lg-6 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Stock Levels</h6>
+      </div>
+      <div class="card-body">
+        <div class="chart-bar">
+          <canvas id="stockLevelsChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 
+{% block extra_js %}
+<script>
+  // Chart.js initialization
+  document.addEventListener("DOMContentLoaded", function () {
+    // Register Chart.js globally
+    Chart.defaults.font.family = "'Nunito', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = "#666";
+    
+    // Initialize Bootstrap dropdowns
+    var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+    dropdownElementList.map(function (dropdownToggleEl) {
+      return new bootstrap.Dropdown(dropdownToggleEl);
+    });
+    
+    let currentPeriod = "monthly";
+    let salesChart = null;
+    let categoryChart = null;
+    let topProductsChart = null;
+    let stockLevelsChart = null;
+    let packageSalesChart = null;
+
+    // Helper functions for loading indicators
+    function showLoading(chartId) {
+      const container = document.getElementById(chartId).parentNode;
+      const loadingHtml = `
+        <div class="chart-loading text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2">Loading chart data...</p>
+        </div>
+      `;
+      
+      // Store canvas element
+      const canvas = document.getElementById(chartId);
+      canvas.style.display = 'none';
+      
+      // Add loading indicator
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'chart-loading-container';
+      loadingDiv.innerHTML = loadingHtml;
+      container.appendChild(loadingDiv);
+    }
+    
+    function hideLoading(chartId) {
+      const container = document.getElementById(chartId).parentNode;
+      const loadingDiv = container.querySelector('.chart-loading-container');
+      if (loadingDiv) {
+        container.removeChild(loadingDiv);
+      }
+      document.getElementById(chartId).style.display = 'block';
+    }
+    
+    function showError(chartId, message = 'Could not load chart data. Please try again later.') {
+      const container = document.getElementById(chartId).parentNode;
+      const errorHtml = `
+        <div class="text-center py-5 text-danger">
+          <i class="fas fa-exclamation-circle mb-3" style="font-size: 3rem;"></i>
+          <p>${message}</p>
+        </div>
+      `;
+      
+      // Remove loading indicator if exists
+      const loadingDiv = container.querySelector('.chart-loading-container');
+      if (loadingDiv) {
+        container.removeChild(loadingDiv);
+      }
+      
+      // Add error message
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'chart-error-container';
+      errorDiv.innerHTML = errorHtml;
+      container.appendChild(errorDiv);
+      
+      // Hide the canvas
+      document.getElementById(chartId).style.display = 'none';
+    }
+    
+    function showNoData(chartId) {
+      showError(chartId, 'No data available for this chart.');
+    }
+
+    // Period selectors
+    document.querySelectorAll(".period-selector").forEach(item => {
+      item.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const period = this.dataset.period;
+        const displayText = this.dataset.display || this.textContent;
+        currentPeriod = period;
+        
+        // Update display text
+        document.getElementById('currentPeriodDisplay').textContent = displayText;
+        
+        // Update active class in UI
+        document.querySelectorAll(".period-selector").forEach(el => {
+          el.classList.remove("active");
+        });
+        this.classList.add("active");
+        
+        // Load the chart with the selected period
+        loadSalesChart(period);
+      });
+    });
+
+    // Initialize charts
+    loadSalesChart(currentPeriod);
+    loadCategoryChart();
+    loadTopProductsChart();
+    loadStockLevelsChart();
+    loadPackageSalesChart();
+
+    function loadSalesChart(period) {
+      showLoading("salesChart");
+      
+      fetch(`{% url 'admin_dashboard:admin_chart_data' %}?type=sales&period=${period}`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.statusText);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          // Check if data is valid
+          if (!data.labels || !data.values || data.labels.length === 0) {
+            throw new Error('No data available for the selected period');
+          }
+          
+          hideLoading("salesChart");
+          const salesCtx = document.getElementById("salesChart").getContext("2d");
+
+          // Destroy previous chart if exists
+          if (salesChart) {
+            salesChart.destroy();
+          }
+
+          // Create new chart
+          salesChart = new Chart(salesCtx, {
+            type: "line",
+            data: {
+              labels: data.labels,
+              datasets: [
+                {
+                  label: "Sales ($)",
+                  data: data.values,
+                  backgroundColor: "rgba(78, 115, 223, 0.05)",
+                  borderColor: "rgba(78, 115, 223, 1)",
+                  pointRadius: 3,
+                  pointBackgroundColor: "rgba(78, 115, 223, 1)",
+                  pointBorderColor: "rgba(78, 115, 223, 1)",
+                  pointHoverRadius: 3,
+                  pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
+                  pointHoverBorderColor: "rgba(78, 115, 223, 1)",
+                  pointHitRadius: 10,
+                  pointBorderWidth: 2,
+                  tension: 0.3,
+                  fill: true,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              layout: {
+                padding: {
+                  left: 10,
+                  right: 25,
+                  top: 25,
+                  bottom: 0
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  grid: {
+                    color: "rgb(234, 236, 244)",
+                    zeroLineColor: "rgb(234, 236, 244)",
+                    drawBorder: false,
+                    borderDash: [2],
+                    zeroLineBorderDash: [2]
+                  },
+                  ticks: {
+                    callback: function (value) {
+                      return "$" + value.toLocaleString();
+                    },
+                  },
+                },
+                x: {
+                  grid: {
+                    display: false,
+                    drawBorder: false
+                  },
+                  ticks: {
+                    maxTicksLimit: 7
+                  }
+                }
+              },
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  backgroundColor: "rgb(255, 255, 255)",
+                  bodyColor: "#858796",
+                  titleMarginBottom: 10,
+                  titleColor: '#6e707e',
+                  titleFont: {
+                    size: 14,
+                    weight: 'bold'
+                  },
+                  borderColor: '#dddfeb',
+                  borderWidth: 1,
+                  padding: 15,
+                  displayColors: false,
+                  intersect: false,
+                  mode: 'index',
+                  caretPadding: 10,
+                  callbacks: {
+                    label: function (context) {
+                      return "Sales: $" + context.raw.toLocaleString();
+                    },
+                  },
+                },
+              },
+            },
+          });
+        })
+        .catch(error => {
+          console.error("Error loading sales chart:", error);
+          showError("salesChart", error.message || 'Could not load sales data');
+        });
+    }
+
+    function loadCategoryChart() {
+      showLoading("categoryPieChart");
+      
+      fetch('{% url "admin_dashboard:admin_chart_data" %}?type=categories')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (!data.labels || data.labels.length === 0) {
+            showNoData('categoryPieChart');
+            return;
+          }
+          
+          hideLoading("categoryPieChart");
+          
+          const ctx = document.getElementById('categoryPieChart').getContext('2d');
+          
+          // Destroy previous chart if exists
+          if (categoryChart) {
+            categoryChart.destroy();
+          }
+          
+          // Generate colors
+          const backgroundColors = [];
+          const borderColors = [];
+          const colorSet = [
+            ['rgba(78, 115, 223, 0.7)', 'rgba(78, 115, 223, 1)'],
+            ['rgba(54, 185, 204, 0.7)', 'rgba(54, 185, 204, 1)'],
+            ['rgba(246, 194, 62, 0.7)', 'rgba(246, 194, 62, 1)'],
+            ['rgba(231, 74, 59, 0.7)', 'rgba(231, 74, 59, 1)'],
+            ['rgba(104, 109, 224, 0.7)', 'rgba(104, 109, 224, 1)'],
+            ['rgba(58, 83, 155, 0.7)', 'rgba(58, 83, 155, 1)'],
+          ];
+          
+          for (let i = 0; i < data.labels.length; i++) {
+            const colorIndex = i % colorSet.length;
+            backgroundColors.push(colorSet[colorIndex][0]);
+            borderColors.push(colorSet[colorIndex][1]);
+          }
+          
+          categoryChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: data.labels,
+              datasets: [{
+                data: data.values,
+                backgroundColor: backgroundColors,
+                borderColor: borderColors,
+                borderWidth: 1
+              }]
+            },
+            options: {
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'right',
+                  labels: {
+                    padding: 20,
+                    boxWidth: 12
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const label = context.label || '';
+                      const value = context.raw || 0;
+                      const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                      const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                      return `${label}: ${value} (${percentage}%)`;
+                    }
+                  }
+                }
+              },
+              cutout: '70%'
+            }
+          });
+        })
+        .catch(error => {
+          console.error('Error fetching category data:', error);
+          showError('categoryPieChart');
+        });
+    }
+
+    function loadTopProductsChart() {
+      showLoading("topProductsChart");
+      
+      fetch('{% url "admin_dashboard:admin_chart_data" %}?type=top-products')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (!data.labels || data.labels.length === 0) {
+            showNoData('topProductsChart');
+            return;
+          }
+          
+          hideLoading('topProductsChart');
+          
+          const ctx = document.getElementById('topProductsChart').getContext('2d');
+          
+          // Destroy previous chart if exists
+          if (topProductsChart) {
+            topProductsChart.destroy();
+          }
+          
+          topProductsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.labels,
+              datasets: [{
+                label: 'Units Sold',
+                data: data.values,
+                backgroundColor: 'rgba(54, 185, 204, 0.8)',
+                borderColor: 'rgba(54, 185, 204, 1)',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              indexAxis: 'y',
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  beginAtZero: true,
+                  grid: {
+                    display: false
+                  },
+                  ticks: {
+                    precision: 0
+                  }
+                },
+                y: {
+                  grid: {
+                    display: false
+                  }
+                }
+              }
+            }
+          });
+        })
+        .catch(error => {
+          console.error('Error fetching top products data:', error);
+          showError('topProductsChart');
+        });
+    }
+
+    function loadStockLevelsChart() {
+      showLoading("stockLevelsChart");
+      
+      fetch('{% url "admin_dashboard:admin_chart_data" %}?type=stock_levels')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (!data.labels || data.labels.length === 0) {
+            showNoData('stockLevelsChart');
+            return;
+          }
+          
+          hideLoading('stockLevelsChart');
+          
+          const ctx = document.getElementById('stockLevelsChart').getContext('2d');
+          
+          // Destroy previous chart if exists
+          if (stockLevelsChart) {
+            stockLevelsChart.destroy();
+          }
+          
+          // Generate background colors based on stock level
+          const backgroundColors = [];
+          const borderColors = [];
+          
+          data.values.forEach(value => {
+            if (value <= 5) {
+              // Low stock - red
+              backgroundColors.push('rgba(231, 74, 59, 0.7)');
+              borderColors.push('rgba(231, 74, 59, 1)');
+            } else if (value <= 15) {
+              // Medium stock - yellow
+              backgroundColors.push('rgba(246, 194, 62, 0.7)');
+              borderColors.push('rgba(246, 194, 62, 1)');
+            } else {
+              // Good stock - green
+              backgroundColors.push('rgba(28, 200, 138, 0.7)');
+              borderColors.push('rgba(28, 200, 138, 1)');
+            }
+          });
+          
+          stockLevelsChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: data.labels,
+              datasets: [
+                {
+                  label: "Stock Quantity",
+                  data: data.values,
+                  backgroundColor: backgroundColors,
+                  borderColor: borderColors,
+                  borderWidth: 1,
+                  barPercentage: 0.7,
+                  categoryPercentage: 0.8,
+                  borderRadius: 3,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  grid: {
+                    color: "rgb(234, 236, 244)",
+                    zeroLineColor: "rgb(234, 236, 244)",
+                    drawBorder: false,
+                    borderDash: [2],
+                    zeroLineBorderDash: [2]
+                  },
+                  ticks: {
+                    precision: 0
+                  }
+                },
+                x: {
+                  grid: {
+                    display: false,
+                    drawBorder: false
+                  },
+                  ticks: {
+                    maxRotation: 45,
+                    minRotation: 45,
+                    autoSkip: true,
+                    maxTicksLimit: 20
+                  }
+                }
+              },
+            },
+          });
+        })
+        .catch(error => {
+          console.error('Error fetching stock levels data:', error);
+          showError('stockLevelsChart');
+        });
+    }
+
+    function loadPackageSalesChart() {
+      showLoading('packageSalesChart');
+      
+      fetch(`{% url 'admin_dashboard:admin_chart_data' %}?type=packages`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(data => {
+          hideLoading('packageSalesChart');
+          
+          if (packageSalesChart) {
+            packageSalesChart.destroy();
+          }
+          
+          const ctx = document.getElementById('packageSalesChart').getContext('2d');
+          packageSalesChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'right',
+                  labels: {
+                    boxWidth: 12,
+                    padding: 10
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const label = context.label || '';
+                      const value = context.raw || 0;
+                      return `${label}: ${value} sales`;
+                    }
+                  }
+                }
+              },
+              cutout: '70%'
+            }
+          });
+        })
+        .catch(error => {
+          console.error('Error loading package sales chart:', error);
+          showError('packageSalesChart');
+        });
+    }
+
+    function loadAllCharts() {
+      loadSalesChart();
+      loadCategoryChart();
+      loadTopProductsChart();
+      loadStockLevelsChart();
+      loadPackageSalesChart();
+    }
+    
+    // Initial load
+    loadAllCharts();
+  });
+</script>
+{% endblock %}

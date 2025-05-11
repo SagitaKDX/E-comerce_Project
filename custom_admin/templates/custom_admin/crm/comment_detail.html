@@ -1,0 +1,199 @@
+{% extends 'custom_admin/crm/base.html' %}
+
+{% block title %}Comment Detail - CRM System{% endblock %}
+
+{% block page_title %}Comment #{{ comment.id }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'crm:crm_comment_list' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="fas fa-arrow-left me-1"></i> Back to Comments
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Comment Details -->
+    <div class="col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Comment Details</h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-sm-4 text-muted">User:</div>
+                    <div class="col-sm-8">
+                        <a href="{% url 'crm:crm_user_detail' comment.user.id %}" class="text-primary">
+                            {{ comment.user.username }}
+                        </a>
+                    </div>
+                </div>
+                <div class="comment-main mb-4 p-3 border-left-primary shadow-sm">
+                    <div class="d-flex justify-content-between mb-3">
+                        <div>
+                            <h5 class="mb-0">{{ comment.user.username }}</h5>
+                            <small class="text-muted">{{ comment.created_at|date:"F d, Y H:i" }}</small>
+                        </div>
+                        <div>
+                            {% if comment.status == 'new' %}
+                            <span class="badge bg-primary">New</span>
+                            {% elif comment.status == 'in_progress' %}
+                            <span class="badge bg-warning">In Progress</span>
+                            {% elif comment.status == 'resolved' %}
+                            <span class="badge bg-success">Resolved</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Closed</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <p class="mb-0" style="white-space: pre-wrap;">{{ comment.text }}</p>
+                </div>
+                
+                <!-- Responses -->
+                {% if responses %}
+                <h5 class="mb-3">Responses</h5>
+                {% for response in responses %}
+                <div class="comment-response mb-3 {% if response.is_private %}border-left-warning{% else %}border-left-success{% endif %} p-3 shadow-sm">
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>
+                            <h6 class="mb-0">{{ response.user.username }}
+                                {% if response.user.is_staff or response.user.profile.is_csr %}
+                                <span class="badge bg-info">CSR</span>
+                                {% endif %}
+                            </h6>
+                            <small class="text-muted">{{ response.created_at|date:"F d, Y H:i" }}</small>
+                        </div>
+                        {% if response.is_private %}
+                        <span class="badge bg-warning">Private</span>
+                        {% endif %}
+                    </div>
+                    <p class="mb-0" style="white-space: pre-wrap;">{{ response.text }}</p>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="alert alert-info">No responses yet.</div>
+                {% endif %}
+
+                <!-- Status update form -->
+                <div class="mb-4">
+                    <div class="card-header">Update Status</div>
+                    <div class="card-body">
+                        <form action="{% url 'crm:crm_comment_detail' comment.id %}" method="post" class="row g-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_status">
+                            <div class="col-md-8">
+                                <select name="status" class="form-select">
+                                    <option value="new" {% if comment.status == 'new' %}selected{% endif %}>New</option>
+                                    <option value="in_progress" {% if comment.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="resolved" {% if comment.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                                    <option value="closed" {% if comment.status == 'closed' %}selected{% endif %}>Closed</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary w-100">Update</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Assignment form -->
+                <div class="mb-4">
+                    <div class="card-header">Assign Comment</div>
+                    <div class="card-body">
+                        <form action="{% url 'crm:crm_comment_detail' comment.id %}" method="post" class="row g-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="assign">
+                            <div class="col-md-8">
+                                {% if comment.assigned_to %}
+                                <p>Currently assigned to: <strong>{{ comment.assigned_to.username }}</strong></p>
+                                <input type="hidden" name="assign_to" value="unassign">
+                                <button type="submit" class="btn btn-warning">Unassign</button>
+                                {% else %}
+                                <button type="submit" name="assign_to" value="me" class="btn btn-success me-2">
+                                    <i class="fas fa-user-plus me-1"></i> Assign to me
+                                </button>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Response form -->
+                <div class="mb-4">
+                    <div class="card-header">Add Response</div>
+                    <div class="card-body">
+                        <form action="{% url 'crm:crm_comment_detail' comment.id %}" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="respond">
+                            <div class="mb-3">
+                                <textarea name="response" class="form-control" rows="3" placeholder="Your response..." required></textarea>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="is_private" name="is_private">
+                                <label class="form-check-label" for="is_private">
+                                    Private (only visible to staff)
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit Response</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-5">
+        <!-- Product Info -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Product Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    {% if comment.product.image %}
+                    <img src="{{ comment.product.image.url }}" alt="{{ comment.product.name }}" class="me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                    {% else %}
+                    <div class="me-3 d-flex align-items-center justify-content-center bg-light" style="width: 60px; height: 60px;">
+                        <i class="fas fa-box fa-2x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h5 class="mb-0">{{ comment.product.name }}</h5>
+                        <p class="mb-0 text-muted small">{{ comment.product.category.name }}</p>
+                    </div>
+                </div>
+                <p class="mb-2">
+                    <strong>Price:</strong> ${{ comment.product.price }}
+                </p>
+                <p class="mb-2">
+                    <strong>Stock:</strong> {{ comment.product.stock }} units
+                </p>
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-sm btn-outline-primary">View Product</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .border-left-primary {
+        border-left: 4px solid #4e73df;
+    }
+    .border-left-success {
+        border-left: 4px solid #1cc88a;
+    }
+    .border-left-warning {
+        border-left: 4px solid #f6c23e;
+    }
+    .comment-main {
+        background-color: #f8f9fc;
+    }
+    .comment-response {
+        background-color: #f8f9fc;
+        margin-left: 20px;
+    }
+</style>
+{% endblock %} 

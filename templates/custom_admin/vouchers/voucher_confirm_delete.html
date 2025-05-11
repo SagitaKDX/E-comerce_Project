@@ -1,0 +1,96 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{{ title }}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:admin_vouchers' %}">Vouchers</a></li>
+        <li class="breadcrumb-item active">{{ title }}</li>
+    </ol>
+    
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card mb-4">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Confirm Deletion
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Are you sure you want to delete the voucher <strong>{{ voucher.code }}</strong>?
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <strong>Voucher Details</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-4"><strong>Code:</strong></div>
+                                <div class="col-8">{{ voucher.code }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4"><strong>Discount:</strong></div>
+                                <div class="col-8">
+                                    {% if voucher.discount_type == 'percentage' %}
+                                        {{ voucher.discount_value }}%
+                                        {% if voucher.max_discount %}
+                                            (max ${{ voucher.max_discount }})
+                                        {% endif %}
+                                    {% else %}
+                                        ${{ voucher.discount_value }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4"><strong>Valid Period:</strong></div>
+                                <div class="col-8">
+                                    {{ voucher.valid_from|date:"M d, Y" }} - {{ voucher.valid_to|date:"M d, Y" }}
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4"><strong>Status:</strong></div>
+                                <div class="col-8">
+                                    {% if voucher.is_valid %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-4"><strong>Usage:</strong></div>
+                                <div class="col-8">
+                                    {{ voucher.used_count }} / {{ voucher.usage_limit }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p class="text-danger">
+                        <i class="fas fa-info-circle me-1"></i>
+                        This action cannot be undone. All data associated with this voucher will be permanently deleted.
+                    </p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-end">
+                            <a href="{% url 'admin_dashboard:admin_vouchers' %}" class="btn btn-secondary me-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-1"></i>Delete Voucher
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

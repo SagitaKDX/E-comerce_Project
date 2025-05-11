@@ -1,0 +1,208 @@
+{% extends 'custom_admin/crm/base.html' %}
+
+{% block title %}Comments - CRM System{% endblock %}
+
+{% block page_title %}Customer Comments{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'crm:crm_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Filter Comments</h6>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row">
+            <div class="col-md-3 mb-3">
+                <label for="status">Status</label>
+                <select class="form-control" id="status" name="status">
+                    <option value="all" {% if status_filter == 'all' or not status_filter %}selected{% endif %}>All Statuses</option>
+                    <option value="new" {% if status_filter == 'new' %}selected{% endif %}>New</option>
+                    <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+                    <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+                    <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Closed</option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="assignment">Assignment</label>
+                <select class="form-control" id="assignment" name="assignment">
+                    <option value="all" {% if assignment_filter == 'all' or not assignment_filter %}selected{% endif %}>All Assignments</option>
+                    <option value="assigned_to_me" {% if assignment_filter == 'assigned_to_me' %}selected{% endif %}>Assigned to Me</option>
+                    <option value="unassigned" {% if assignment_filter == 'unassigned' %}selected{% endif %}>Unassigned</option>
+                </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="search">Search</label>
+                <input type="text" class="form-control" id="search" name="search" placeholder="Search comments..." value="{{ search_term|default:'' }}">
+            </div>
+            <div class="col-md-2 mb-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Comments Table -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Comments</h6>
+        <div>
+            <span class="badge bg-secondary">Total: {{ page_obj.paginator.count }}</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Product</th>
+                        <th>User</th>
+                        <th>Comment</th>
+                        <th>Created</th>
+                        <th>Status</th>
+                        <th>Response Time</th>
+                        <th>Assigned To</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comment in page_obj %}
+                    <tr>
+                        <td>#{{ comment.id }}</td>
+                        <td>{{ comment.product.name }}</td>
+                        <td>
+                            <a href="{% url 'crm:crm_user_detail' comment.user.id %}" class="text-primary">
+                                {{ comment.user.username }}
+                            </a>
+                        </td>
+                        <td>{{ comment.text|truncatechars:50 }}</td>
+                        <td>{{ comment.created_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            {% if comment.status == 'new' %}
+                            <span class="badge bg-primary">New</span>
+                            {% elif comment.status == 'in_progress' %}
+                            <span class="badge bg-warning">In Progress</span>
+                            {% elif comment.status == 'resolved' %}
+                            <span class="badge bg-success">Resolved</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Closed</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if comment.has_response %}
+                                <span class="badge bg-info">{{ comment.response_time_hours }} hr</span>
+                            {% else %}
+                                {% if comment.status == 'new' %}
+                                    <span class="badge bg-warning">Waiting {{ comment.waiting_time_hours }} hr</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">N/A</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if comment.assigned_to %}
+                            <span class="badge bg-info">{{ comment.assigned_to.username }}</span>
+                            {% else %}
+                            <span class="badge bg-light text-dark">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'crm:crm_comment_detail' comment.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if not comment.assigned_to %}
+                            <form action="{% url 'crm:crm_comment_detail' comment.id %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="assign">
+                                <input type="hidden" name="assign_to" value="me">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">No comments found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="d-flex justify-content-center mt-4">
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if assignment_filter %}&assignment={{ assignment_filter }}{% endif %}{% if search_term %}&search={{ search_term }}{% endif %}" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if assignment_filter %}&assignment={{ assignment_filter }}{% endif %}{% if search_term %}&search={{ search_term }}{% endif %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if assignment_filter %}&assignment={{ assignment_filter }}{% endif %}{% if search_term %}&search={{ search_term }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if assignment_filter %}&assignment={{ assignment_filter }}{% endif %}{% if search_term %}&search={{ search_term }}{% endif %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if assignment_filter %}&assignment={{ assignment_filter }}{% endif %}{% if search_term %}&search={{ search_term }}{% endif %}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,750 @@
+{% extends 'custom_admin/crm/base.html' %}
+
+{% block title %}User: {{ user_detail.username }} | CRM System{% endblock %}
+
+{% block page_title %}User: {{ user_detail.username }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'crm:crm_user_list' %}" class="btn btn-sm btn-outline-secondary me-2">
+    <i class="fas fa-arrow-left me-1"></i> Back to Users
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- User Profile Card -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">User Profile</h6>
+                <span class="badge {% if user_detail.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                    {% if user_detail.is_active %}Active{% else %}Inactive{% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="avatar-circle mb-3">
+                        <span class="initials">{{ user_detail.username|slice:":2"|upper }}</span>
+                    </div>
+                    <h5 class="font-weight-bold">{{ user_detail.get_full_name|default:user_detail.username }}</h5>
+                    <p class="text-muted">
+                        <i class="fas fa-envelope me-1"></i> {{ user_detail.email }}
+                    </p>
+                </div>
+                
+                <div class="user-details">
+                    <div class="row mb-2">
+                        <div class="col-5 text-muted">Username:</div>
+                        <div class="col-7">{{ user_detail.username }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 text-muted">Email:</div>
+                        <div class="col-7">{{ user_detail.email }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 text-muted">Last Login:</div>
+                        <div class="col-7">{{ user_detail.last_login|date:"M d, Y H:i"|default:"Never" }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 text-muted">Date Joined:</div>
+                        <div class="col-7">{{ user_detail.date_joined|date:"M d, Y" }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 text-muted">Account Type:</div>
+                        <div class="col-7">
+                            {% if user_detail.is_superuser %}
+                                <span class="badge bg-danger">Admin</span>
+                            {% elif user_detail.is_staff %}
+                                <span class="badge bg-warning">Staff</span>
+                            {% else %}
+                                <span class="badge bg-info">Customer</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if profile %}
+                    <div class="mt-3 pt-3 border-top">
+                        <h6 class="font-weight-bold mb-3">Profile Details</h6>
+                        {% if profile.phone %}
+                        <div class="row mb-2">
+                            <div class="col-5 text-muted">Phone:</div>
+                            <div class="col-7">{{ profile.phone }}</div>
+                        </div>
+                        {% endif %}
+                        {% if profile.address %}
+                        <div class="row mb-2">
+                            <div class="col-5 text-muted">Address:</div>
+                            <div class="col-7">{{ profile.address }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Shipping Addresses -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Shipping Addresses</h6>
+            </div>
+            <div class="card-body">
+                {% if shipping_addresses %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Address</th>
+                                <th>City</th>
+                                <th>State</th>
+                                <th>ZIP</th>
+                                <th>Country</th>
+                                <th>Default</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for address in shipping_addresses %}
+                            <tr>
+                                <td>{{ address.address }}</td>
+                                <td>{{ address.city }}</td>
+                                <td>{{ address.state }}</td>
+                                <td>{{ address.zipcode }}</td>
+                                <td>{{ address.country }}</td>
+                                <td>
+                                    {% if address.is_default %}
+                                    <span class="badge bg-success"><i class="fas fa-check"></i></span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">No shipping addresses found</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs Section -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <ul class="nav nav-tabs card-header-tabs" id="userDetailTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab" aria-controls="summary" aria-selected="true">Summary</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="cart-tab" data-bs-toggle="tab" data-bs-target="#cart" type="button" role="tab" aria-controls="cart" aria-selected="false">Cart</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab" aria-controls="orders" aria-selected="false">Orders</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="ratings-tab" data-bs-toggle="tab" data-bs-target="#ratings" type="button" role="tab" aria-controls="ratings" aria-selected="false">Ratings</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="userDetailTabsContent">
+                    <!-- Summary Tab -->
+                    <div class="tab-pane fade show active" id="summary" role="tabpanel" aria-labelledby="summary-tab">
+                        <div class="row">
+                            <div class="col-md-3 mb-4">
+                                <div class="card border-left-primary shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Orders</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_orders_count }}</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-shopping-bag fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-4">
+                                <div class="card border-left-success shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Spent</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_order_value|floatformat:2 }}</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-4">
+                                <div class="card border-left-warning shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Total Ratings</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_ratings_count }}</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-star fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-4">
+                                <div class="card border-left-info shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Active Cart Items</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                    {% if cart %}
+                                                    {{ cart_items.count|add:cart_packages.count }}
+                                                    {% else %}
+                                                    0
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Orders -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h5 class="font-weight-bold mb-3">Recent Orders</h5>
+                                {% if orders %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Order ID</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Items</th>
+                                                <th>Total</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for order in orders %}
+                                            {% if forloop.counter <= 5 %}
+                                            <tr>
+                                                <td>#{{ order.id }}</td>
+                                                <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                                <td>
+                                                    <span class="badge 
+                                                    {% if order.status == 'Pending' %}bg-warning
+                                                    {% elif order.status == 'Processing' %}bg-info
+                                                    {% elif order.status == 'Shipped' %}bg-primary
+                                                    {% elif order.status == 'Delivered' %}bg-success
+                                                    {% else %}bg-secondary{% endif %}">
+                                                        {{ order.status }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ order.items.count }}</td>
+                                                <td>${{ order.total_price }}</td>
+                                                <td>
+                                                    <a href="{% url 'crm:crm_order_detail' order.id %}" class="btn btn-sm btn-info">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="text-center py-4">
+                                    <p class="text-muted mb-0">No orders found</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Ratings -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h5 class="font-weight-bold mb-3">Recent Ratings</h5>
+                                {% if product_ratings or package_ratings %}
+                                <div class="row">
+                                    {% for rating in product_ratings|slice:":2" %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <h6 class="card-title mb-0">{{ rating.product.name }}</h6>
+                                                    <div>
+                                                        {% for i in "12345" %}
+                                                        <i class="fas fa-star {% if forloop.counter <= rating.rating %}text-warning{% else %}text-muted{% endif %}"></i>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                                <p class="card-text small text-muted">{{ rating.feedback|truncatechars:100 }}</p>
+                                                <div class="d-flex justify-content-between">
+                                                    <small class="text-muted">{{ rating.created_at|date:"M d, Y" }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                    {% for rating in package_ratings|slice:":2" %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <h6 class="card-title mb-0">{{ rating.package.name }} (Package)</h6>
+                                                    <div>
+                                                        {% for i in "12345" %}
+                                                        <i class="fas fa-star {% if forloop.counter <= rating.rating %}text-warning{% else %}text-muted{% endif %}"></i>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                                <p class="card-text small text-muted">{{ rating.feedback|truncatechars:100 }}</p>
+                                                <div class="d-flex justify-content-between">
+                                                    <small class="text-muted">{{ rating.created_at|date:"M d, Y" }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="text-center py-4">
+                                    <p class="text-muted mb-0">No ratings found</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Cart Tab -->
+                    <div class="tab-pane fade" id="cart" role="tabpanel" aria-labelledby="cart-tab">
+                        {% if cart %}
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 class="font-weight-bold mb-3">Active Cart</h5>
+                                {% if cart_items %}
+                                <h6 class="mb-3">Products</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Product</th>
+                                                <th>Price</th>
+                                                <th>Quantity</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in cart_items %}
+                                            <tr>
+                                                <td>{{ item.product.name }}</td>
+                                                <td>${{ item.product.price }}</td>
+                                                <td>{{ item.quantity }}</td>
+                                                <td>${{ item.total }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+                                
+                                {% if cart_packages %}
+                                <h6 class="mb-3 mt-4">Packages</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Package</th>
+                                                <th>Price</th>
+                                                <th>Quantity</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for package in cart_packages %}
+                                            <tr>
+                                                <td>{{ package.package.name }}</td>
+                                                <td>${{ package.package.price }}</td>
+                                                <td>{{ package.quantity }}</td>
+                                                <td>${{ package.total }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+                                
+                                {% if not cart_items and not cart_packages %}
+                                <div class="text-center py-4">
+                                    <p class="text-muted mb-0">Cart is empty</p>
+                                </div>
+                                {% endif %}
+                                
+                                {% if cart_items or cart_packages %}
+                                <div class="row mt-4">
+                                    <div class="col-md-6 offset-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6 class="font-weight-bold mb-3">Cart Summary</h6>
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span>Subtotal:</span>
+                                                    <span>${{ cart.subtotal }}</span>
+                                                </div>
+                                                {% if cart.discount %}
+                                                <div class="d-flex justify-content-between mb-2 text-danger">
+                                                    <span>Discount:</span>
+                                                    <span>-${{ cart.discount }}</span>
+                                                </div>
+                                                {% endif %}
+                                                <div class="d-flex justify-content-between font-weight-bold mt-2 pt-2 border-top">
+                                                    <span>Total:</span>
+                                                    <span>${{ cart.total }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-0">User does not have an active cart</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Orders Tab -->
+                    <div class="tab-pane fade" id="orders" role="tabpanel" aria-labelledby="orders-tab">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="font-weight-bold mb-0">Order History</h5>
+                                    <div>
+                                        <span class="badge bg-primary fs-6 me-2">Total Orders: {{ total_orders_count }}</span>
+                                        <span class="badge bg-success fs-6">Total Value: ${{ total_order_value|floatformat:2 }}</span>
+                                    </div>
+                                </div>
+                                
+                                {% if orders %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Order ID</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Items</th>
+                                                <th>Total</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for order in orders %}
+                                            <tr>
+                                                <td>#{{ order.id }}</td>
+                                                <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                                <td>
+                                                    <span class="badge 
+                                                    {% if order.status == 'Pending' %}bg-warning
+                                                    {% elif order.status == 'Processing' %}bg-info
+                                                    {% elif order.status == 'Shipped' %}bg-primary
+                                                    {% elif order.status == 'Delivered' %}bg-success
+                                                    {% else %}bg-secondary{% endif %}">
+                                                        {{ order.status }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ order.items.count }}</td>
+                                                <td>${{ order.total_price }}</td>
+                                                <td>
+                                                    <a href="{% url 'crm:crm_order_detail' order.id %}" class="btn btn-sm btn-info">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            <tr class="order-items-row bg-light">
+                                                <td colspan="6" class="p-0">
+                                                    <div class="collapse" id="orderItems{{ order.id }}">
+                                                        <div class="p-3">
+                                                            <h6 class="mb-2">Order Items</h6>
+                                                            <div class="table-responsive">
+                                                                <table class="table table-sm">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>Product</th>
+                                                                            <th>Price</th>
+                                                                            <th>Quantity</th>
+                                                                            <th>Total</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {% for item in order.items.all %}
+                                                                        <tr>
+                                                                            <td>{{ item.product.name }}</td>
+                                                                            <td>${{ item.price }}</td>
+                                                                            <td>{{ item.quantity }}</td>
+                                                                            <td>${{ item.total }}</td>
+                                                                        </tr>
+                                                                        {% endfor %}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Pagination -->
+                                {% if orders.has_other_pages %}
+                                <nav aria-label="Page navigation" class="mt-4">
+                                    <ul class="pagination justify-content-center">
+                                        {% if orders.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ orders.previous_page_number }}" aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                        {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">&laquo;</span>
+                                        </li>
+                                        {% endif %}
+                                        
+                                        {% for i in orders.paginator.page_range %}
+                                        {% if orders.number == i %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ i }}</span>
+                                        </li>
+                                        {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                                        </li>
+                                        {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if orders.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ orders.next_page_number }}" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                        {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">&raquo;</span>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                                {% endif %}
+                                {% else %}
+                                <div class="text-center py-4">
+                                    <p class="text-muted mb-0">No orders found</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Ratings Tab -->
+                    <div class="tab-pane fade" id="ratings" role="tabpanel" aria-labelledby="ratings-tab">
+                        {% if product_ratings.count > 0 or package_ratings.count > 0 %}
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-6">
+                                                <h5 class="card-title">Rating Summary</h5>
+                                                <p class="mb-0">Total ratings: <strong>{{ total_ratings_count }}</strong></p>
+                                                <p class="mb-0">Average product rating: 
+                                                    <strong>{{ avg_product_rating|floatformat:1 }}/5</strong>
+                                                    <span class="ms-2">
+                                                        {% for i in "12345" %}
+                                                        <i class="fas fa-star {% if forloop.counter <= avg_product_rating %}text-warning{% else %}text-muted{% endif %}"></i>
+                                                        {% endfor %}
+                                                    </span>
+                                                </p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="progress-container">
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <span>5 Stars</span>
+                                                        <span class="small">{{ rating_counts.5 }}</span>
+                                                    </div>
+                                                    <div class="progress mb-2" style="height: 8px;">
+                                                        <div class="progress-bar bg-warning" role="progressbar" 
+                                                             style="width: {% widthratio rating_counts.5 product_ratings.count 100 %}%" 
+                                                             aria-valuenow="{{ rating_counts.5 }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="{{ product_ratings.count }}">
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <span>4 Stars</span>
+                                                        <span class="small">{{ rating_counts.4 }}</span>
+                                                    </div>
+                                                    <div class="progress mb-2" style="height: 8px;">
+                                                        <div class="progress-bar bg-warning" role="progressbar" 
+                                                             style="width: {% widthratio rating_counts.4 product_ratings.count 100 %}%" 
+                                                             aria-valuenow="{{ rating_counts.4 }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="{{ product_ratings.count }}">
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <span>3 Stars</span>
+                                                        <span class="small">{{ rating_counts.3 }}</span>
+                                                    </div>
+                                                    <div class="progress mb-2" style="height: 8px;">
+                                                        <div class="progress-bar bg-warning" role="progressbar" 
+                                                             style="width: {% widthratio rating_counts.3 product_ratings.count 100 %}%" 
+                                                             aria-valuenow="{{ rating_counts.3 }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="{{ product_ratings.count }}">
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <span>2 Stars</span>
+                                                        <span class="small">{{ rating_counts.2 }}</span>
+                                                    </div>
+                                                    <div class="progress mb-2" style="height: 8px;">
+                                                        <div class="progress-bar bg-warning" role="progressbar" 
+                                                             style="width: {% widthratio rating_counts.2 product_ratings.count 100 %}%" 
+                                                             aria-valuenow="{{ rating_counts.2 }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="{{ product_ratings.count }}">
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <span>1 Star</span>
+                                                        <span class="small">{{ rating_counts.1 }}</span>
+                                                    </div>
+                                                    <div class="progress mb-2" style="height: 8px;">
+                                                        <div class="progress-bar bg-warning" role="progressbar" 
+                                                             style="width: {% widthratio rating_counts.1 product_ratings.count 100 %}%" 
+                                                             aria-valuenow="{{ rating_counts.1 }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="{{ product_ratings.count }}">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="font-weight-bold mb-3">Product Ratings</h5>
+                                {% if product_ratings %}
+                                <div class="list-group">
+                                    {% for rating in product_ratings %}
+                                    <div class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">
+                                                {{ rating.product.name }}
+                                            </h6>
+                                            <small>{{ rating.created_at|date:"M d, Y" }}</small>
+                                        </div>
+                                        <div class="mb-1">
+                                            {% for i in "12345" %}
+                                            <i class="fas fa-star {% if forloop.counter <= rating.rating %}text-warning{% else %}text-muted{% endif %}"></i>
+                                            {% endfor %}
+                                            <span class="ms-2">({{ rating.rating }}/5)</span>
+                                        </div>
+                                        <p class="mb-1">{{ rating.feedback }}</p>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="text-center py-4">
+                                    <p class="text-muted mb-0">No product ratings found</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5 class="font-weight-bold mb-3">Package Ratings</h5>
+                                {% if package_ratings %}
+                                <div class="list-group">
+                                    {% for rating in package_ratings %}
+                                    <div class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">
+                                                {{ rating.package.name }}
+                                            </h6>
+                                            <small>{{ rating.created_at|date:"M d, Y" }}</small>
+                                        </div>
+                                        <div class="mb-1">
+                                            {% for i in "12345" %}
+                                            <i class="fas fa-star {% if forloop.counter <= rating.rating %}text-warning{% else %}text-muted{% endif %}"></i>
+                                            {% endfor %}
+                                            <span class="ms-2">({{ rating.rating }}/5)</span>
+                                        </div>
+                                        <p class="mb-1">{{ rating.feedback }}</p>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="text-center py-4">
+                                    <p class="text-muted mb-0">No package ratings found</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 100px;
+    height: 100px;
+    background-color: var(--crm-primary);
+    border-radius: 50%;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.initials {
+    font-size: 42px;
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+</style>
+{% endblock %} 

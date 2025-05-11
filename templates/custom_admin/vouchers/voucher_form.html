@@ -1,0 +1,291 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{{ title }}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:admin_vouchers' %}">Vouchers</a></li>
+        <li class="breadcrumb-item active">{{ title }}</li>
+    </ol>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-ticket-alt me-1"></i>
+                    {% if voucher %}Edit Voucher: {{ voucher.code }}{% else %}Add New Voucher{% endif %}
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Display Type for Existing Vouchers -->
+                        {% if voucher %}
+                        <div class="mb-4 p-3 bg-light border rounded">
+                            <h5 class="mb-0">Voucher Type: 
+                                {% if voucher.voucher_type == 'general' %}
+                                    <span class="badge bg-info fs-6"><i class="fas fa-users me-1"></i> General</span>
+                                {% elif voucher.voucher_type == 'dedicated' %}
+                                    <span class="badge bg-success fs-6"><i class="fas fa-user-tag me-1"></i> Dedicated</span>
+                                {% endif %}
+                            </h5>
+                            <small class="text-muted">Voucher type cannot be changed after creation.</small>
+                            <!-- Include hidden field for voucher_type when editing -->
+                            <input type="hidden" name="voucher_type" value="{{ voucher.voucher_type }}">
+                        </div>
+                        {% else %}
+                        <!-- Render type selection for New Vouchers -->
+                        <div class="mb-3">
+                            <label for="{{ form.voucher_type.id_for_label }}" class="form-label fw-bold">{{ form.voucher_type.label }} <span class="text-danger">*</span></label>
+                            {{ form.voucher_type }} {# This will use the widget defined in forms.py #}
+                            {% if form.voucher_type.errors %}
+                                <div class="text-danger small mt-1">{{ form.voucher_type.errors|striptags }}</div>
+                            {% endif %}
+                            <div class="form-text">{{ form.voucher_type.help_text }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.code.id_for_label }}" class="form-label">{{ form.code.label }} <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        {{ form.code }}
+                                        {% if not voucher %}{# Only show generate button for new vouchers #}
+                                        <button type="button" onclick="generateCode()" class="btn btn-outline-secondary" id="generate-code-btn">
+                                            <i class="fas fa-random"></i> Generate
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    {% if form.code.errors %}
+                                        <div class="text-danger small mt-1">{{ form.code.errors|striptags }}</div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.code.help_text }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.discount_type.id_for_label }}" class="form-label">{{ form.discount_type.label }} <span class="text-danger">*</span></label>
+                                    {{ form.discount_type }}
+                                    {% if form.discount_type.errors %}
+                                        <div class="text-danger small mt-1">{{ form.discount_type.errors|striptags }}</div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.discount_type.help_text }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.discount_value.id_for_label }}" class="form-label">{{ form.discount_value.label }} <span class="text-danger">*</span></label>
+                                    {{ form.discount_value }}
+                                    {% if form.discount_value.errors %}
+                                        <div class="text-danger small mt-1">{{ form.discount_value.errors|striptags }}</div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.discount_value.help_text }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6" id="max-discount-wrapper">
+                                <div class="form-group">
+                                    <label for="{{ form.max_discount.id_for_label }}" class="form-label">{{ form.max_discount.label }}</label>
+                                    {{ form.max_discount }}
+                                    {% if form.max_discount.errors %}
+                                        <div class="text-danger small mt-1">{{ form.max_discount.errors|striptags }}</div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.max_discount.help_text }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.valid_from.id_for_label }}" class="form-label">{{ form.valid_from.label }} <span class="text-danger">*</span></label>
+                                    {{ form.valid_from }}
+                                    {% if form.valid_from.errors %}
+                                        <div class="text-danger small mt-1">{{ form.valid_from.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.valid_to.id_for_label }}" class="form-label">{{ form.valid_to.label }} <span class="text-danger">*</span></label>
+                                    {{ form.valid_to }}
+                                    {% if form.valid_to.errors %}
+                                        <div class="text-danger small mt-1">{{ form.valid_to.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.min_purchase_amount.id_for_label }}" class="form-label">{{ form.min_purchase_amount.label }}</label>
+                                    {{ form.min_purchase_amount }}
+                                    {% if form.min_purchase_amount.errors %}
+                                        <div class="text-danger small mt-1">{{ form.min_purchase_amount.errors|striptags }}</div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.min_purchase_amount.help_text }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.usage_limit.id_for_label }}" class="form-label">{{ form.usage_limit.label }} <span class="text-danger">*</span></label>
+                                    {{ form.usage_limit }}
+                                    {% if form.usage_limit.errors %}
+                                        <div class="text-danger small mt-1">{{ form.usage_limit.errors|striptags }}</div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.usage_limit.help_text }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    {{ form.is_active.label }}
+                                </label>
+                                {% if form.is_active.errors %}
+                                    <div class="text-danger small mt-1">{{ form.is_active.errors|striptags }}</div>
+                                {% endif %}
+                                <div class="form-text">{{ form.is_active.help_text }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>{% if voucher %}Update{% else %}Create{% endif %} Voucher
+                            </button>
+                            <a href="{% url 'admin_dashboard:admin_vouchers' %}" class="btn btn-secondary ms-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Voucher Information
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Tips for Creating Vouchers</h5>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item">
+                            <strong>Voucher Code:</strong> Use memorable, uppercase codes (e.g., SUMMER25, WELCOME10).
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Discount Type:</strong> "Percentage" applies a % discount, "Fixed" applies a specific amount.
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Max Discount:</strong> For percentage discounts, set a cap to avoid excessive discounts.
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Validity:</strong> Set appropriate start and end dates to control usage periods.
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Usage Limit:</strong> Control how many times a voucher can be used.
+                        </li>
+                    </ul>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        For promotional campaigns, create vouchers with higher minimum purchase amounts to increase average order value.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Simple function to generate a random code
+    function generateCode() {
+        var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        var code = 'SHOP';
+        for (var i = 0; i < 8; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        var codeInput = document.getElementById('id_code');
+        if (codeInput) {
+            codeInput.value = code;
+            console.log("Generated code: " + code);
+        } else {
+            console.error("Code input field (#id_code) not found.");
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Voucher form DOM loaded");
+
+        // Add bootstrap classes to form elements
+        document.querySelectorAll('input[type="text"], input[type="number"], input[type="datetime-local"], select').forEach(function(el) {
+            el.classList.add('form-control');
+        });
+        document.querySelectorAll('input[type="checkbox"]').forEach(function(el) {
+            el.classList.add('form-check-input');
+        });
+        // Specifically style the voucher type select if it exists
+        var voucherTypeSelect = document.getElementById('id_voucher_type');
+        if (voucherTypeSelect) {
+            voucherTypeSelect.classList.add('form-select');
+        }
+        
+        // Show/hide max discount field based on discount type
+        var discountTypeSelect = document.getElementById('id_discount_type');
+        var maxDiscountWrapper = document.getElementById('max-discount-wrapper');
+        
+        function toggleMaxDiscount() {
+            if (maxDiscountWrapper && discountTypeSelect) {
+                if (discountTypeSelect.value === 'percentage') {
+                    maxDiscountWrapper.style.display = 'block';
+                } else {
+                    maxDiscountWrapper.style.display = 'none';
+                }
+            } else {
+                // Only log error if elements expected but not found
+                if (discountTypeSelect && maxDiscountWrapper) { 
+                    console.error("Discount type select or max discount wrapper not found.");
+                }
+            }
+        }
+        
+        // Initial check
+        toggleMaxDiscount();
+        
+        // Add listener for changes
+        if (discountTypeSelect) {
+            discountTypeSelect.addEventListener('change', toggleMaxDiscount);
+        }
+
+        // Attach event listener to the generate code button if it exists
+        var genBtn = document.getElementById('generate-code-btn');
+        if (genBtn) {
+            genBtn.addEventListener('click', generateCode);
+            console.log("Attached click listener to generate code button.");
+        } else {
+            console.log("Generate code button not found (likely editing an existing voucher).");
+        }
+    });
+</script>
+{% endblock %} 

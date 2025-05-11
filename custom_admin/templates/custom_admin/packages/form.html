@@ -1,0 +1,617 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+{% load custom_tags %}
+
+{% block title %}{{ title }} - E-Shop Admin{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'admin_dashboard:admin_packages' %}" class="btn btn-sm btn-secondary">
+    <i class="fas fa-arrow-left me-1"></i> Back to Packages
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .formset-row {
+        border: 1px solid #e9ecef;
+        border-radius: 0.25rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+        background-color: #fff;
+        transition: all 0.2s ease;
+    }
+    .formset-row:hover {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        transform: translateY(-2px);
+    }
+    .delete-row {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+    }
+    .formset-header {
+        background-color: #f8f9fa;
+        padding: 0.5rem 1rem;
+        margin-bottom: 1rem;
+        border-radius: 0.25rem;
+        font-weight: 600;
+    }
+    .add-row-button {
+        margin-top: 1rem;
+    }
+    .required-star {
+        color: #dc3545;
+        margin-left: 3px;
+    }
+    .form-check-input {
+        width: 1.2em;
+        height: 1.2em;
+        margin-top: 0.15em;
+        vertical-align: top;
+        background-color: #fff;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+        border: 1px solid rgba(0, 0, 0, 0.25);
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    input[type="checkbox"].form-check-input {
+        border-radius: 0.25em;
+    }
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    .form-check-input:checked[type="checkbox"] {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+    }
+    .form-check-label {
+        margin-left: 0.5rem;
+    }
+    .delete-checkbox {
+        display: none;
+    }
+    .delete-label {
+        cursor: pointer;
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: #f8d7da;
+        color: #dc3545;
+        text-align: center;
+        line-height: 32px;
+        transition: all 0.2s ease;
+    }
+    .delete-label:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+    .delete-row-container {
+        text-align: center;
+    }
+    .deleted-row {
+        opacity: 0.6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" novalidate id="packageForm">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Basic Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label for="{{ form.name.id_for_label }}" class="form-label">Package Name <span class="required-star">*</span></label>
+                                    {{ form.name }}
+                                    {% if form.name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label">Category <span class="required-star">*</span></label>
+                                    {{ form.category }}
+                                    {% if form.category.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.category.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.description.id_for_label }}" class="form-label">Description <span class="required-star">*</span></label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.description.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Pricing</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="{{ form.original_price.id_for_label }}" class="form-label">Original Price <span class="required-star">*</span></label>
+                                    {{ form.original_price }}
+                                    {% if form.original_price.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.original_price.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.original_price.help_text }}</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.discounted_price.id_for_label }}" class="form-label">Discounted Price <span class="required-star">*</span></label>
+                                    {{ form.discounted_price }}
+                                    {% if form.discounted_price.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.discounted_price.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.discounted_price.help_text }}</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.minimum_purchase_amount.id_for_label }}" class="form-label">Minimum Purchase <span class="required-star">*</span></label>
+                                    {{ form.minimum_purchase_amount }}
+                                    {% if form.minimum_purchase_amount.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.minimum_purchase_amount.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.minimum_purchase_amount.help_text }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Image & Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <label for="{{ form.image.id_for_label }}" class="form-label">Package Image</label>
+                                {% if not is_add and package.image %}
+                                    <div class="mb-2">
+                                        <img src="{{ package.image.url }}" alt="{{ package.name }}" class="img-thumbnail" style="max-height: 200px;">
+                                    </div>
+                                {% endif %}
+                                {{ form.image }}
+                                {% if form.image.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.image.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    Active
+                                </label>
+                                {% if form.is_active.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.is_active.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-check">
+                                {{ form.is_featured }}
+                                <label class="form-check-label" for="{{ form.is_featured.id_for_label }}">
+                                    Featured
+                                </label>
+                                {% if form.is_featured.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.is_featured.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">{{ form.is_featured.help_text }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Products Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Package Products</h5>
+                </div>
+                <div class="card-body">
+                    <div id="product-formset">
+                        <div class="formset-header row">
+                            <div class="col-md-5">Product</div>
+                            <div class="col-md-3">Quantity</div>
+                            <div class="col-md-3">Options</div>
+                            <div class="col-md-1"></div>
+                        </div>
+                        
+                        {{ formset.management_form }}
+                        <!-- Add this empty form template for JavaScript cloning -->
+                        {% if formset.empty_form %}
+                        <div id="empty_form" style="display:none;">
+                            <div class="formset-row empty-form">
+                                <div class="row">
+                                    <div class="col-md-5">
+                                        <label class="form-label d-block d-md-none">Product</label>
+                                        {{ formset.empty_form.product|add_class:"form-select" }}
+                                        {{ formset.empty_form.id }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label d-block d-md-none">Quantity</label>
+                                        {{ formset.empty_form.quantity|add_class:"form-control"|attr:"min:1" }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-check mt-2">
+                                            {{ formset.empty_form.is_required|add_class:"form-check-input" }}
+                                            <label class="form-check-label" for="{{ formset.empty_form.is_required.id_for_label }}">
+                                                Cannot be removed
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <div class="delete-row-container mt-2">
+                                            {{ formset.empty_form.DELETE|add_class:"delete-checkbox" }}
+                                            <label class="delete-label" for="{{ formset.empty_form.DELETE.id_for_label }}">
+                                                <i class="fas fa-trash text-danger"></i>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% for form in formset %}
+                            {% if form.instance.pk or forloop.first %}
+                            <div class="formset-row {% if form.DELETE.value %}deleted-row{% endif %}">
+                                <div class="row">
+                                    <div class="col-md-5">
+                                        <label class="form-label d-block d-md-none">Product</label>
+                                        {{ form.product|add_class:"form-select" }}
+                                        {{ form.id }}
+                                        {% if form.product.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.product.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label d-block d-md-none">Quantity</label>
+                                        {{ form.quantity|add_class:"form-control"|attr:"min:1" }}
+                                        {% if form.quantity.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.quantity.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-check mt-2">
+                                            {{ form.is_required|add_class:"form-check-input" }}
+                                            <label class="form-check-label" for="{{ form.is_required.id_for_label }}">
+                                                Cannot be removed
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <div class="delete-row-container mt-2">
+                                            {{ form.DELETE|add_class:"delete-checkbox" }}
+                                            <label class="delete-label {% if form.DELETE.value %}bg-danger text-white{% endif %}" for="{{ form.DELETE.id_for_label }}">
+                                                <i class="fas fa-trash text-danger"></i>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <button id="add-form" class="btn btn-sm btn-primary add-row-button">
+                        <i class="fas fa-plus-circle me-1"></i> Add Product
+                    </button>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end">
+                <a href="{% url 'admin_dashboard:admin_packages' %}" class="btn btn-secondary me-2">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save Package</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Form initialized');
+        
+        // Initialize all product select elements with proper CSS
+        const productSelects = document.querySelectorAll('select[name*="product"]');
+        productSelects.forEach((select, index) => {
+            select.classList.add('form-select');
+            console.log(`Product select #${index}: id=${select.id}, name=${select.name}, value=${select.value}`);
+        });
+        
+        // Add form-control class to all quantity inputs to match Bootstrap styling
+        const quantityInputs = document.querySelectorAll('input[name*="quantity"]');
+        quantityInputs.forEach((input, index) => {
+            input.classList.add('form-control');
+            input.setAttribute('min', '1');
+            console.log(`Quantity input #${index}: id=${input.id}, name=${input.name}, value=${input.value}`);
+        });
+        
+        // Log DELETE checkboxes
+        const deleteCheckboxes = document.querySelectorAll('input[name*="DELETE"]');
+        deleteCheckboxes.forEach((checkbox, index) => {
+            console.log(`Delete checkbox #${index}: id=${checkbox.id}, name=${checkbox.name}, checked=${checkbox.checked}`);
+        });
+    
+        const addButton = document.getElementById('add-form');
+        
+        // Get the formset prefix
+        const prefix = "{{ formset.prefix }}";
+        console.log(`Formset prefix: ${prefix}`);
+        
+        // Counter for new forms
+        let formCount = parseInt(document.getElementById('id_' + prefix + '-TOTAL_FORMS').value);
+        const maxForms = parseInt(document.getElementById('id_' + prefix + '-MAX_NUM_FORMS').value);
+        console.log(`Initial form count: ${formCount}, Max forms: ${maxForms}`);
+        
+        // Form validation before submit
+        const packageForm = document.getElementById('packageForm');
+        if (packageForm) {
+            console.log("Found package form, setting up submit handler");
+            
+            packageForm.addEventListener('submit', function(e) {
+                console.log('Form submission attempted');
+                let error = false;
+                
+                // Inspect management form values
+                const totalFormsInput = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+                const initialFormsInput = document.getElementById('id_' + prefix + '-INITIAL_FORMS');
+                const minFormsInput = document.getElementById('id_' + prefix + '-MIN_NUM_FORMS');
+                const maxFormsInput = document.getElementById('id_' + prefix + '-MAX_NUM_FORMS');
+                
+                console.log("Management form values at submission:");
+                console.log(`  TOTAL_FORMS: ${totalFormsInput ? totalFormsInput.value : 'not found'}`);
+                console.log(`  INITIAL_FORMS: ${initialFormsInput ? initialFormsInput.value : 'not found'}`);
+                console.log(`  MIN_NUM_FORMS: ${minFormsInput ? minFormsInput.value : 'not found'}`);
+                console.log(`  MAX_NUM_FORMS: ${maxFormsInput ? maxFormsInput.value : 'not found'}`);
+                
+                const allRows = document.querySelectorAll('.formset-row');
+                let activeRows = 0;
+                
+                console.log(`Found ${allRows.length} total form rows`);
+                
+                // Count active (non-deleted) rows
+                allRows.forEach((row, index) => {
+                    // Check if this is the empty form
+                    const isEmptyForm = row.classList.contains('empty-form');
+                    if (isEmptyForm) {
+                        console.log(`Row #${index} is the empty form template - ignoring`);
+                        return;
+                    }
+                    
+                    const deleteCheckbox = row.querySelector('input[name*="DELETE"]');
+                    const productSelect = row.querySelector('select[name*="product"]');
+                    const quantityInput = row.querySelector('input[name*="quantity"]');
+                    
+                    const productSelectName = productSelect ? productSelect.getAttribute('name') : 'not found';
+                    const productSelectValue = productSelect ? productSelect.value : 'not found';
+                    const quantityInputName = quantityInput ? quantityInput.getAttribute('name') : 'not found';
+                    const quantityInputValue = quantityInput ? quantityInput.value : 'not found';
+                    
+                    console.log(`Row #${index} details:`);
+                    console.log(`  Product select: name=${productSelectName}, value=${productSelectValue}`);
+                    console.log(`  Quantity input: name=${quantityInputName}, value=${quantityInputValue}`);
+                    
+                    const isDeleted = deleteCheckbox && deleteCheckbox.checked;
+                    console.log(`Row #${index}: deleted=${isDeleted}`);
+                    
+                    if (!deleteCheckbox || !deleteCheckbox.checked) {
+                        activeRows++;
+                        
+                        // Validate product and quantity on active rows
+                        console.log(`Validating row #${index}: product=${productSelect.value}, quantity=${quantityInput.value}`);
+                        
+                        if (!productSelect.value) {
+                            productSelect.classList.add('is-invalid');
+                            error = true;
+                            console.log(`Row #${index} has invalid product`);
+                        } else {
+                            productSelect.classList.remove('is-invalid');
+                        }
+                        
+                        if (!quantityInput.value || quantityInput.value < 1) {
+                            quantityInput.classList.add('is-invalid');
+                            error = true;
+                            console.log(`Row #${index} has invalid quantity`);
+                        } else {
+                            quantityInput.classList.remove('is-invalid');
+                        }
+                    }
+                });
+                
+                console.log(`Active rows: ${activeRows}`);
+                
+                // Validate at least one active product
+                if (activeRows === 0) {
+                    alert('Please add at least one product to the package');
+                    console.log('No active rows found - preventing submission');
+                    e.preventDefault();
+                    return;
+                }
+                
+                if (error) {
+                    e.preventDefault();
+                    console.log('Form validation failed - preventing submission');
+                    alert('Please fix the errors in the form before submitting');
+                } else {
+                    console.log('Form validation successful - continuing submission');
+                    
+                    // Log final form state
+                    const formData = new FormData(packageForm);
+                    console.log('Form data entries:');
+                    for (let pair of formData.entries()) {
+                        if (pair[0].includes('packageproduct_set')) {
+                            console.log(`  ${pair[0]} = ${pair[1]}`);
+                        }
+                    }
+                }
+            });
+        }
+        
+        addButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Add product button clicked');
+            
+            const formsetContainer = document.querySelector('#product-formset');
+            const emptyFormHtml = document.querySelector('#empty_form').innerHTML;
+            const totalFormsInput = document.querySelector('#id_' + prefix + '-TOTAL_FORMS');
+            const formIdx = parseInt(totalFormsInput.value);
+            
+            console.log(`Creating new row with index: ${formIdx}`);
+            
+            // Create new form row from the empty form template
+            let newRowHtml = emptyFormHtml.replaceAll(
+                new RegExp(prefix + '-__prefix__', 'g'), 
+                prefix + '-' + formIdx
+            );
+            
+            // Create a temporary container to convert the HTML string to DOM nodes
+            const tempContainer = document.createElement('div');
+            tempContainer.innerHTML = newRowHtml;
+            
+            // Get the new row from the container
+            const newRow = tempContainer.firstElementChild;
+            newRow.classList.remove('empty-form');
+            newRow.style.display = '';
+            
+            // Increment the form count
+            totalFormsInput.value = (formIdx + 1).toString();
+            console.log(`Updated total forms count to ${totalFormsInput.value}`);
+            
+            // Add the new form to the container before the last form
+            formsetContainer.appendChild(newRow);
+            
+            // Initialize the new product select with Select2
+            const newProductSelect = newRow.querySelector(`select[name$="product"]`);
+            if (newProductSelect) {
+                $(newProductSelect).select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'Select a product',
+                    width: '100%'
+                });
+                console.log(`Initialized Select2 for new product select: ${newProductSelect.id}`);
+            }
+            
+            // Set up delete label click handler for the new row
+            const deleteLabel = newRow.querySelector('.delete-label');
+            if (deleteLabel) {
+                setupDeleteLabelHandler(deleteLabel);
+                console.log('Set up delete handler for new row');
+            }
+        });
+        
+        // Function to set up delete label click handlers
+        function setupDeleteLabelHandler(label) {
+            label.addEventListener('click', function() {
+                const checkboxId = this.getAttribute('for');
+                const checkbox = document.getElementById(checkboxId);
+                checkbox.checked = !checkbox.checked;
+                
+                console.log(`Delete clicked: checkbox=${checkboxId}, new state=${checkbox.checked}`);
+                
+                // Visual feedback
+                const row = this.closest('.formset-row');
+                if (checkbox.checked) {
+                    row.classList.add('deleted-row');
+                    this.classList.add('bg-danger');
+                    this.classList.add('text-white');
+                    console.log('Row marked as deleted');
+                } else {
+                    row.classList.remove('deleted-row');
+                    this.classList.remove('bg-danger');
+                    this.classList.remove('text-white');
+                    console.log('Row marked as not deleted');
+                }
+            });
+        }
+        
+        // Set up delete label click handlers for all existing rows
+        const deleteLabels = document.querySelectorAll('.delete-label');
+        deleteLabels.forEach(setupDeleteLabelHandler);
+        
+        // Apply delete styles to already deleted rows on page load
+        document.querySelectorAll('.delete-checkbox:checked').forEach(checkbox => {
+            const row = checkbox.closest('.formset-row');
+            const label = row.querySelector('.delete-label');
+            if (row && label) {
+                row.classList.add('deleted-row');
+                label.classList.add('bg-danger');
+                label.classList.add('text-white');
+                console.log(`Applying deleted styles to row with checkbox ${checkbox.id}`);
+            }
+        });
+    });
+</script>
+{% endblock %} 

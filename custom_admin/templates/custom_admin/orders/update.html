@@ -1,0 +1,104 @@
+<!-- custom_admin/templates/custom_admin/orders/update.html -->
+{% extends 'custom_admin/base.html' %}
+
+{% block title %}Update Order #{{ order.id }} - E-Shop Admin{% endblock %}
+
+{% block page_title %}Update Order #{{ order.id }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'admin_dashboard:admin_order_detail' order.id %}" class="btn btn-sm btn-secondary">
+    <i class="fas fa-arrow-left"></i> Back to Order Details
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Update Order Status</h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.status.id_for_label }}" class="form-label">Order Status</label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.status.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Add Notes (Optional)</label>
+                        <textarea id="notes" name="notes" class="form-control" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="notify_customer" name="notify_customer" checked>
+                        <label class="form-check-label" for="notify_customer">
+                            Notify customer about this update
+                        </label>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Update Order
+                        </button>
+                        <a href="{% url 'admin_dashboard:admin_order_detail' order.id %}" class="btn btn-secondary ms-2">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Current Order Status -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Current Order Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Order ID:</strong> #{{ order.id }}</p>
+                        <p><strong>Customer:</strong> {{ order.user.get_full_name|default:order.user.username }}</p>
+                        <p><strong>Date:</strong> {{ order.created_at|date:"M d, Y H:i" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p>
+                            <strong>Current Status:</strong> 
+                            {% if order.status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% elif order.status == 'processing' %}
+                                <span class="badge bg-info">Processing</span>
+                            {% elif order.status == 'shipped' %}
+                                <span class="badge bg-primary">Shipped</span>
+                            {% elif order.status == 'delivered' %}
+                                <span class="badge bg-success">Delivered</span>
+                            {% elif order.status == 'cancelled' %}
+                                <span class="badge bg-danger">Cancelled</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ order.status|title }}</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Total Amount:</strong> ${{ order.total_price }}</p>
+                        <p><strong>Items:</strong> {{ order.items.count }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

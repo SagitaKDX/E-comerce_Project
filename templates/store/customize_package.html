@@ -1,0 +1,379 @@
+{% extends 'base.html' %}
+
+{% block title %}Customize {{ package.name }} - E-Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .customize-container {
+        padding: 2rem 0;
+    }
+    .package-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .package-title {
+        font-weight: 700;
+        color: #212529;
+        margin-bottom: 0;
+    }
+    .package-price {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #dc3545;
+    }
+    .product-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .product-img {
+        height: 150px;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    .product-card:hover .product-img {
+        transform: scale(1.05);
+    }
+    .product-title {
+        font-weight: 600;
+        margin-top: 0.5rem;
+        font-size: 1rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .product-price {
+        font-weight: 700;
+        color: #28a745;
+        font-size: 1.1rem;
+    }
+    .required-badge {
+        background-color: #dc3545;
+        color: white;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 3px;
+        margin-left: 0.5rem;
+    }
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .quantity-btn {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .quantity-btn:hover {
+        background-color: #e2e6ea;
+    }
+    .quantity-input {
+        width: 50px;
+        text-align: center;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        margin: 0 0.5rem;
+        padding: 0.25rem;
+    }
+    .summary-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        position: sticky;
+        top: 1rem;
+    }
+    .summary-header {
+        background-color: #dc3545;
+        color: white;
+        padding: 1rem;
+        border-radius: 10px 10px 0 0;
+    }
+    .summary-title {
+        font-weight: 600;
+        margin-bottom: 0;
+    }
+    .summary-body {
+        padding: 1.5rem;
+    }
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 1px solid #f1f1f1;
+    }
+    .summary-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    .summary-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    .summary-value {
+        font-weight: 600;
+        color: #212529;
+    }
+    .summary-total {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #dc3545;
+    }
+    .minimum-warning {
+        padding: 0.75rem;
+        margin-top: 1rem;
+        border-radius: 5px;
+        font-size: 0.9rem;
+        color: #856404;
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+    }
+    .alert-minimum {
+        background-color: #f8d7da;
+        color: #721c24;
+        border-color: #f5c6cb;
+    }
+    .footer-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container customize-container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'package_list' %}">Packages</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'package_detail' package.slug %}">{{ package.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Customize</li>
+        </ol>
+    </nav>
+
+    <div class="package-header">
+        <h1 class="package-title">Customize {{ package.name }}</h1>
+        <div class="package-price">Original Price: ${{ package.discounted_price }}</div>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i> Select the products you want to include in your customized package. The total value must be at least ${{ package.minimum_purchase_amount }}.
+    </div>
+
+    <form method="post" action="{% url 'customize_package' package.slug %}">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="row">
+                    {% for package_product in package_products %}
+                        <div class="col-md-6">
+                            <div class="card product-card">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-start mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input product-checkbox" type="checkbox" name="product" value="{{ package_product.product.id }}" id="product{{ package_product.product.id }}" 
+                                                {% if package_product.is_required %}checked disabled{% else %}
+                                                    {% for item in customized_package_items %}
+                                                        {% if item.product.id == package_product.product.id %}checked{% endif %}
+                                                    {% endfor %}
+                                                {% endif %}>
+                                        </div>
+                                        <div class="ms-2">
+                                            <label class="form-check-label product-title" for="product{{ package_product.product.id }}">
+                                                {{ package_product.product.name }}
+                                                {% if package_product.is_required %}
+                                                    <span class="required-badge">Required</span>
+                                                {% endif %}
+                                            </label>
+                                            <div class="product-price">${{ package_product.product.price }}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-6">
+                                            {% if package_product.product.image %}
+                                                <img src="{{ package_product.product.image.url }}" class="img-fluid rounded product-img" alt="{{ package_product.product.name }}">
+                                            {% else %}
+                                                <img src="https://via.placeholder.com/150x150?text=No+Image" class="img-fluid rounded product-img" alt="{{ package_product.product.name }}">
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="quantity-control mt-2">
+                                                <label for="quantity_{{ package_product.product.id }}" class="form-label">Quantity:</label>
+                                                <div class="d-flex align-items-center">
+                                                    <button type="button" class="quantity-btn decrease-btn" data-product-id="{{ package_product.product.id }}">-</button>
+                                                    <input type="number" name="quantity_{{ package_product.product.id }}" id="quantity_{{ package_product.product.id }}" class="quantity-input" min="1" value="{% for item in customized_package_items %}{% if item.product.id == package_product.product.id %}{{ item.quantity }}{% endif %}{% empty %}{{ package_product.quantity }}{% endfor %}" 
+                                                    {% if not package_product.is_required %}disabled{% endif %}>
+                                                    <button type="button" class="quantity-btn increase-btn" data-product-id="{{ package_product.product.id }}">+</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card summary-card">
+                    <div class="card-header summary-header">
+                        <h4 class="summary-title">Package Summary</h4>
+                    </div>
+                    <div class="card-body summary-body">
+                        <div class="summary-item">
+                            <div class="summary-label">Selected Products:</div>
+                            <div class="summary-value product-count">0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Total Items:</div>
+                            <div class="summary-value total-items">0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Total Value:</div>
+                            <div class="summary-value total-value">$0.00</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Minimum Required:</div>
+                            <div class="summary-value">${{ package.minimum_purchase_amount }}</div>
+                        </div>
+                        
+                        <div class="minimum-warning" id="minimumWarning">
+                            <i class="fas fa-exclamation-triangle me-2"></i> Your selection must reach the minimum value of ${{ package.minimum_purchase_amount }}.
+                        </div>
+                        
+                        <div class="footer-actions">
+                            <a href="{% url 'package_detail' package.slug %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-danger flex-grow-1" id="addToCartBtn">
+                                <i class="fas fa-shopping-cart me-1"></i> Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const productCheckboxes = document.querySelectorAll('.product-checkbox');
+        const quantityInputs = document.querySelectorAll('.quantity-input');
+        const decreaseBtns = document.querySelectorAll('.decrease-btn');
+        const increaseBtns = document.querySelectorAll('.increase-btn');
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        const minimumWarning = document.getElementById('minimumWarning');
+        const minAmount = {{ package.minimum_purchase_amount }};
+        
+        function updateSummary() {
+            let selectedCount = 0;
+            let totalItems = 0;
+            let totalValue = 0;
+            
+            productCheckboxes.forEach(checkbox => {
+                const productId = checkbox.value;
+                const quantityInput = document.getElementById(`quantity_${productId}`);
+                
+                if (checkbox.checked) {
+                    selectedCount++;
+                    const quantity = parseInt(quantityInput.value);
+                    totalItems += quantity;
+                    
+                    // Get price from the product card
+                    const productCard = checkbox.closest('.product-card');
+                    const priceText = productCard.querySelector('.product-price').textContent;
+                    const price = parseFloat(priceText.replace('$', ''));
+                    
+                    totalValue += price * quantity;
+                }
+            });
+            
+            document.querySelector('.product-count').textContent = selectedCount;
+            document.querySelector('.total-items').textContent = totalItems;
+            document.querySelector('.total-value').textContent = '$' + totalValue.toFixed(2);
+            
+            // Check if minimum amount is met
+            if (totalValue < minAmount) {
+                minimumWarning.classList.add('alert-minimum');
+                addToCartBtn.disabled = true;
+            } else {
+                minimumWarning.classList.remove('alert-minimum');
+                addToCartBtn.disabled = false;
+            }
+        }
+        
+        // Initialize quantity inputs and checkboxes
+        productCheckboxes.forEach(checkbox => {
+            const productId = checkbox.value;
+            const quantityInput = document.getElementById(`quantity_${productId}`);
+            
+            // Toggle quantity input based on checkbox state
+            quantityInput.disabled = !checkbox.checked;
+            
+            checkbox.addEventListener('change', function() {
+                quantityInput.disabled = !this.checked;
+                updateSummary();
+            });
+        });
+        
+        // Quantity change handlers
+        quantityInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                if (parseInt(this.value) < 1) {
+                    this.value = 1;
+                }
+                updateSummary();
+            });
+        });
+        
+        // Increase/decrease buttons
+        decreaseBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const productId = this.dataset.productId;
+                const input = document.getElementById(`quantity_${productId}`);
+                if (parseInt(input.value) > 1) {
+                    input.value = parseInt(input.value) - 1;
+                    updateSummary();
+                }
+            });
+        });
+        
+        increaseBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const productId = this.dataset.productId;
+                const input = document.getElementById(`quantity_${productId}`);
+                input.value = parseInt(input.value) + 1;
+                updateSummary();
+            });
+        });
+        
+        // Initial summary update
+        updateSummary();
+    });
+</script>
+{% endblock %}
+{% endblock %} 

@@ -1,0 +1,142 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{{ title }}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">{{ title }}</li>
+    </ol>
+    
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">Total Vouchers</div>
+                            <div class="fs-4 fw-bold">{{ total_vouchers }}</div>
+                        </div>
+                        <i class="fas fa-ticket-alt fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">Active Vouchers</div>
+                            <div class="fs-4 fw-bold">{{ active_vouchers }}</div>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-table me-1"></i>
+                All Vouchers
+            </div>
+            <a href="{% url 'admin_dashboard:admin_voucher_add' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>Add New Voucher
+            </a>
+        </div>
+        <div class="card-body">
+            <table id="vouchers-table" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Type</th>
+                        <th>Discount</th>
+                        <th>Valid From</th>
+                        <th>Valid To</th>
+                        <th>Min. Purchase</th>
+                        <th>Usage</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for voucher in vouchers %}
+                    <tr>
+                        <td><strong>{{ voucher.code }}</strong></td>
+                        <td>
+                            {% if voucher.voucher_type == 'general' %}
+                                <span class="badge bg-info"><i class="fas fa-users me-1"></i> General</span>
+                            {% elif voucher.voucher_type == 'dedicated' %}
+                                <span class="badge bg-success"><i class="fas fa-user-tag me-1"></i> Dedicated</span>
+                            {% else %}
+                                {{ voucher.get_voucher_type_display }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if voucher.discount_type == 'percentage' %}
+                                {{ voucher.discount_value }}%
+                                {% if voucher.max_discount %}
+                                    (max ${{ voucher.max_discount }})
+                                {% endif %}
+                            {% else %}
+                                ${{ voucher.discount_value }}
+                            {% endif %}
+                        </td>
+                        <td>{{ voucher.valid_from|date:"M d, Y H:i" }}</td>
+                        <td>{{ voucher.valid_to|date:"M d, Y H:i" }}</td>
+                        <td>${{ voucher.min_purchase_amount }}</td>
+                        <td>{{ voucher.used_count }} / {{ voucher.usage_limit }}</td>
+                        <td>
+                            {% if voucher.is_valid %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'admin_dashboard:admin_voucher_edit' voucher.id %}" class="btn btn-sm btn-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'admin_dashboard:admin_voucher_duplicate' voucher.id %}" class="btn btn-sm btn-info" title="Duplicate">
+                                    <i class="fas fa-copy"></i>
+                                </a>
+                                {% if voucher.voucher_type == 'dedicated' %}
+                                <a href="{% url 'admin_dashboard:edit_voucher_users' voucher.id %}" class="btn btn-sm btn-success" title="Manage Users">
+                                    <i class="fas fa-users-cog"></i>
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'admin_dashboard:admin_voucher_delete' voucher.id %}" class="btn btn-sm btn-danger" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">No vouchers found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    $(document).ready(function() {
+        $('#vouchers-table').DataTable({
+            order: [[3, 'desc']], // Sort by valid_from date by default
+            responsive: true
+        });
+    });
+</script>
+{% endblock %} 

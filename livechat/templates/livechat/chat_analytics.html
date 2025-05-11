@@ -1,0 +1,286 @@
+{% extends 'custom_admin/crm/base.html' %}
+{% load static %}
+
+{% block title %}Live Chat Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .stats-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    
+    .stats-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .chart-container {
+        height: 300px;
+        position: relative;
+    }
+    
+    .chart-label {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+    
+    .performance-table {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .performance-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+
+    .filter-card {
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Live Chat Analytics</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'crm:crm_dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'livechat:agent_dashboard' %}">Live Chat Support</a></li>
+        <li class="breadcrumb-item active">Analytics</li>
+    </ol>
+    
+    <!-- Filter Card -->
+    <div class="card mb-4 filter-card">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label for="days" class="col-form-label">Data Range:</label>
+                </div>
+                <div class="col-auto">
+                    <select name="days" id="days" class="form-select" onchange="this.form.submit()">
+                        <option value="7" {% if selected_days == 7 %}selected{% endif %}>Last 7 days</option>
+                        <option value="30" {% if selected_days == 30 %}selected{% endif %}>Last 30 days</option>
+                        <option value="90" {% if selected_days == 90 %}selected{% endif %}>Last 90 days</option>
+                        <option value="365" {% if selected_days == 365 %}selected{% endif %}>Last year</option>
+                    </select>
+                </div>
+                <div class="col-auto ms-auto">
+                    <a href="#" class="btn btn-outline-primary" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i> Print Report
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="stats-value">{{ total_chats }}</div>
+                    <div class="stats-label">Total Chats</div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <span>For selected period</span>
+                    <div class="small text-white"><i class="fas fa-comments"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card bg-success text-white mb-4">
+                <div class="card-body">
+                    <div class="stats-value">{{ completion_rate }}%</div>
+                    <div class="stats-label">Completion Rate</div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <span>{{ closed_chats }} chats closed</span>
+                    <div class="small text-white"><i class="fas fa-check-circle"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <div class="stats-value">{{ avg_duration }}</div>
+                    <div class="stats-label">Avg Duration</div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <span>Per chat session</span>
+                    <div class="small text-white"><i class="fas fa-clock"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card bg-info text-white mb-4">
+                <div class="card-body">
+                    <div class="stats-value">{{ chats_per_day|length }}</div>
+                    <div class="stats-label">Active Days</div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <span>With chat activity</span>
+                    <div class="small text-white"><i class="fas fa-calendar-alt"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts -->
+    <div class="row mb-4">
+        <div class="col-xl-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-line me-1"></i>
+                    Chat Sessions Over Time
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="chatsPerDayChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-1"></i>
+                    Chats by Subject
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="chatsBySubjectChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Agent Performance Table -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Agent Performance
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover performance-table">
+                    <thead>
+                        <tr>
+                            <th>Agent</th>
+                            <th>Chats Handled</th>
+                            <th>Avg Chat Duration</th>
+                            <th>% of Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for agent in agent_performance %}
+                        <tr>
+                            <td>
+                                {% if agent.agent__first_name or agent.agent__last_name %}
+                                    {{ agent.agent__first_name }} {{ agent.agent__last_name }}
+                                {% else %}
+                                    {{ agent.agent__username }}
+                                {% endif %}
+                            </td>
+                            <td>{{ agent.count }}</td>
+                            <td>{{ agent.avg_duration }}</td>
+                            <td>{{ agent.count }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-3">No agent data available for the selected period.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Chat Sessions Over Time Chart
+    const chatsPerDayCtx = document.getElementById('chatsPerDayChart').getContext('2d');
+    const chatsPerDayData = {
+        labels: [{% for item in chats_per_day %}'{{ item.date|date:"M d" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Number of Chats',
+            data: [{% for item in chats_per_day %}{{ item.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: 'rgba(0, 123, 255, 0.2)',
+            borderColor: 'rgba(0, 123, 255, 1)',
+            borderWidth: 2,
+            tension: 0.3,
+            pointBackgroundColor: 'rgba(0, 123, 255, 1)'
+        }]
+    };
+    
+    new Chart(chatsPerDayCtx, {
+        type: 'line',
+        data: chatsPerDayData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+    
+    // Chats by Subject Chart
+    const chatsBySubjectCtx = document.getElementById('chatsBySubjectChart').getContext('2d');
+    const chatsBySubjectData = {
+        labels: [{% for item in chats_by_subject %}'{{ item.subject }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            data: [{% for item in chats_by_subject %}{{ item.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)',
+                'rgba(255, 159, 64, 0.8)'
+            ],
+            borderWidth: 1
+        }]
+    };
+    
+    new Chart(chatsBySubjectCtx, {
+        type: 'doughnut',
+        data: chatsBySubjectData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

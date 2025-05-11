@@ -1,0 +1,33 @@
+{% if cart.active_voucher %}
+    <div class="alert alert-success d-flex justify-content-between align-items-center">
+        <span>
+            Voucher Applied: <strong>{{ cart.active_voucher.voucher.code }}</strong> 
+            (-${% filter floatformat:2 %}{{ cart.get_voucher_discount }}{% endfilter %})
+        </span>
+        <form action="{% url 'remove_voucher_from_cart' %}" method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+        </form>
+    </div>
+{% else %}
+    <form class="d-flex" action="{% url 'add_voucher_to_cart' %}" method="post">
+        {% csrf_token %}
+        <input type="text" class="form-control me-2" name="voucher_code" placeholder="Enter Voucher Code">
+        <button type="submit" class="btn btn-primary">Apply</button>
+    </form>
+{% endif %}
+
+<li class="list-group-item d-flex justify-content-between">
+    <span>Subtotal</span>
+    <strong>${{ cart.get_subtotal|floatformat:2 }}</strong>
+</li>
+{% if cart.active_voucher %}
+<li class="list-group-item d-flex justify-content-between text-success">
+    <span>Voucher Discount ({{ cart.active_voucher.voucher.code }})</span>
+    <strong>-${{ cart.get_voucher_discount|floatformat:2 }}</strong>
+</li>
+{% endif %}
+<li class="list-group-item d-flex justify-content-between">
+    <span>Total</span>
+    <strong>${{ cart.total_price|floatformat:2 }}</strong>
+</li> 

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Vouchers{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">My Vouchers</h2>
+
+    {% if vouchers %}
+    <div class="row">
+        {% for voucher in vouchers %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 voucher-card {% if not voucher.active %}voucher-invalid{% endif %}">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ voucher.code }}</h5>
+                    
+                    {% if voucher.description %}
+                    <div class="alert alert-info mb-3 p-2">
+                        <i class="fas fa-gift me-2"></i> {{ voucher.description }}
+                    </div>
+                    {% endif %}
+                    
+                    <p class="card-text">
+                        {% if voucher.discount_type == 'Percentage' %}
+                            {{ voucher.discount_amount }}% off
+                        {% else %}
+                            ${% filter floatformat:2 %}{{ voucher.discount_amount }}{% endfilter %} off
+                        {% endif %}
+                    </p>
+                    <ul class="list-unstyled mt-auto mb-3">
+                        <li><small>Min. Spend: ${% filter floatformat:2 %}{{ voucher.min_purchase }}{% endfilter %}</small></li>
+                        <li><small>Valid Until: {{ voucher.expiry_date|date:"M d, Y" }}</small></li>
+                        <li><small>Remaining Uses: {{ voucher.remaining_qty }}</small></li>
+                    </ul>
+                    {% if voucher.remaining_qty <= 0 %}
+                        <span class="badge bg-secondary align-self-start">Already Used</span>
+                    {% elif not voucher.active %}
+                        <span class="badge bg-danger align-self-start">Expired/Inactive</span>
+                    {% else %}
+                        <form action="{% url 'add_voucher_to_cart' %}" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="voucher_code" value="{{ voucher.code }}">
+                            <button type="submit" class="btn btn-sm btn-primary">Apply to Cart</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>You currently have no vouchers assigned to your account.</p>
+    {% endif %}
+
+</div>
+
+<style>
+.voucher-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease-in-out;
+}
+.voucher-card:hover {
+    transform: translateY(-5px);
+}
+.voucher-invalid {
+    opacity: 0.6;
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+.voucher-invalid .card-title,
+.voucher-invalid .card-text {
+    color: #6c757d;
+}
+.voucher-active {
+    border-color: #198754;
+    border-width: 2px;
+}
+</style>
+{% endblock %} 

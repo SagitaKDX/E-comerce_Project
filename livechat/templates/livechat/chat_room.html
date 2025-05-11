@@ -1,0 +1,803 @@
+{% extends 'livechat/chat_base.html' %}
+{% load static %}
+
+{% block title %}Live Support Chat{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hide site navigation elements when embedded */
+    {% if is_embedded %}
+    header, .navbar, .mobile-top-bar, .mobile-nav, nav, .mobile-nav-bar, footer {
+        display: none !important;
+    }
+    
+    body {
+        padding-top: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        background: transparent !important;
+    }
+    
+    #main-content {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    .no-margin {
+        margin: 0 !important;
+        border-radius: 0 !important;
+        height: 100vh !important;
+        border: none !important;
+    }
+    {% endif %}
+
+    .chat-container {
+        height: {% if is_embedded %}100vh{% else %}70vh{% endif %};
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #e1e1e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        background: #fff;
+        margin: 10px auto;
+        max-width: 1200px;
+    }
+    
+    .chat-header {
+        padding: 15px;
+        background: #007bff;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background: #f8f9fa;
+    }
+    
+    .message {
+        margin-bottom: 15px;
+        display: flex;
+        flex-direction: column;
+        max-width: 75%;
+    }
+    
+    .message-user {
+        align-self: flex-end;
+    }
+    
+    .message-agent {
+        align-self: flex-start;
+    }
+    
+    .message-system {
+        align-self: center;
+        text-align: center;
+        color: #6c757d;
+        max-width: 90%;
+        font-style: italic;
+    }
+    
+    .message-bubble {
+        padding: 10px 15px;
+        border-radius: 18px;
+        position: relative;
+        margin-top: 5px;
+    }
+    
+    .message-user .message-bubble {
+        background-color: #007bff;
+        color: white;
+        border-bottom-right-radius: 0;
+    }
+    
+    .message-agent .message-bubble {
+        background-color: #e9ecef;
+        color: #212529;
+        border-bottom-left-radius: 0;
+    }
+    
+    .message-system .message-bubble {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+    }
+    
+    .message-header {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 3px;
+    }
+    
+    .message-user .message-header {
+        text-align: right;
+    }
+    
+    .message-agent .message-header {
+        text-align: left;
+    }
+    
+    .chat-input {
+        padding: 15px;
+        border-top: 1px solid #e1e1e1;
+        background: white;
+    }
+    
+    .chat-status {
+        padding: 8px 15px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #e1e1e1;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .typing-indicator span {
+        height: 5px;
+        width: 5px;
+        background-color: #6c757d;
+        border-radius: 50%;
+        display: inline-block;
+        margin: 0 1px;
+        animation: typing 1s infinite;
+    }
+    
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes typing {
+        0% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-5px);
+        }
+        100% {
+            transform: translateY(0px);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container {% if is_embedded %}p-0{% else %}py-4{% endif %}">
+    <div class="row {% if is_embedded %}m-0{% endif %}">
+        <div class="col-md-{% if is_agent %}8{% else %}8 mx-auto{% endif %} {% if is_embedded %}p-0{% endif %}">
+            {% if not is_embedded %}
+            <div class="mb-4">
+                <h1 class="h3">Live Support Chat</h1>
+                <p class="text-muted">You're chatting with our support team</p>
+            </div>
+            {% endif %}
+            
+            <div class="chat-container {% if is_embedded %}no-margin{% endif %}">
+                <div class="chat-header">
+                    <div>
+                        <h5 class="mb-0">{{ chat_session.subject }}</h5>
+                        {% if chat_session.agent %}
+                            <small>Support Agent: {{ chat_session.agent.get_full_name|default:chat_session.agent.username }}</small>
+                        {% else %}
+                            <small>Waiting for agent...</small>
+                        {% endif %}
+                    </div>
+                    <div>
+                        {% if is_agent %}
+                            <a href="{% url 'livechat:export_transcript' chat_id=chat_id %}" class="btn btn-sm btn-outline-light me-2">
+                                <i class="fas fa-download"></i> Export
+                            </a>
+                        {% endif %}
+                            <button class="btn btn-sm btn-danger" id="endChatBtn">
+                                <i class="fas fa-times-circle me-1"></i> End Chat
+                            </button>
+                    </div>
+                </div>
+                
+                <!-- Connection error message -->
+                <div id="connection-error" style="display:none; background-color:#f8d7da; color:#721c24; padding:10px; margin:5px; border-radius:5px; text-align:center;">
+                    <strong>Connection Error:</strong> Can't connect to chat server. 
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-danger" onclick="window.location.reload()">Reload Page</button>
+                        <button class="btn btn-sm btn-outline-dark" onclick="retryConnection()">Try Again</button>
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="chat-messages">
+                    {% for message in messages %}
+                        {% if message.message_type == 'system' %}
+                        <div class="message message-system">
+                            <div class="message-bubble">
+                                {{ message.content }}
+                            </div>
+                            <div class="message-time text-center">
+                                <small>{{ message.timestamp|date:"g:i A" }}</small>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="message {% if message.is_agent %}message-agent{% else %}message-user{% endif %}">
+                            <div class="message-header">
+                                {{ message.username }} • {{ message.timestamp|date:"g:i A" }}
+                            </div>
+                            <div class="message-bubble">
+                                {{ message.content|linebreaksbr }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <div class="chat-status">
+                    <span id="status-indicator">
+                        {% if chat_session.status == 'waiting' %}
+                            <span class="text-warning">●</span> Waiting for agent...
+                        {% elif chat_session.status == 'active' %}
+                            <span class="text-success">●</span> Agent is online
+                        {% else %}
+                            <span class="text-secondary">●</span> Chat closed
+                        {% endif %}
+                    </span>
+                    <span class="typing-indicator d-none" id="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </span>
+                </div>
+                
+                <div class="chat-input">
+                    <form id="chat-form" class="d-flex">
+                        <input type="text" id="chat-message" class="form-control chat-input-field" placeholder="Type your message..." {% if chat_session.status == 'closed' %}disabled{% endif %}>
+                        <button type="submit" class="btn btn-primary chat-send-btn" {% if chat_session.status == 'closed' %}disabled{% endif %}>
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            {% if not is_embedded %}
+            <div class="mt-4">
+                <h4>Quick Replies</h4>
+                <div class="quick-replies">
+                    <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="insertQuickReply('Thanks for your help!')">Thanks for your help!</button>
+                    <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="insertQuickReply('I need more information about my order.')">Need order information</button>
+                    <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="insertQuickReply('How long will shipping take?')">Shipping questions</button>
+                    <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="insertQuickReply('I need to return an item.')">Returns</button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if is_agent %}
+        <div class="col-md-4 {% if is_embedded %}d-none{% endif %}">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Chat Details</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Started:</strong> {{ chat_session.created_at|date:"M d, Y g:i A" }}</li>
+                        <li><strong>Status:</strong> {{ chat_session.get_status_display }}</li>
+                        <li><strong>Subject:</strong> {{ chat_session.subject }}</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Customer</h6>
+                    <ul class="list-unstyled">
+                        {% if chat_session.user %}
+                            <li><strong>Name:</strong> {{ chat_session.user.get_full_name|default:"Not provided" }}</li>
+                            <li><strong>Email:</strong> {{ chat_session.user.email }}</li>
+                            <li><strong>Customer Since:</strong> {{ chat_session.user.date_joined|date:"M Y" }}</li>
+                        {% elif chat_session.email %}
+                            <li><strong>Email:</strong> {{ chat_session.email }}</li>
+                            <li><strong>Guest Customer</strong></li>
+                        {% else %}
+                            <li>No customer information available</li>
+                        {% endif %}
+                    </ul>
+                    
+                    {% if recent_orders %}
+                    <h6 class="mt-3">Recent Orders</h6>
+                    <ul class="list-unstyled">
+                        {% for order in recent_orders %}
+                        <li>
+                            <strong>#{{ order.order_number }}</strong> - {{ order.created_at|date:"M d, Y" }}<br>
+                            <small>{{ order.get_status_display }} - ${{ order.total_price }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const MAX_RECONNECT_ATTEMPTS = 5;
+    const DEBUG = {% if debug %}true{% else %}false{% endif %};
+    
+    // Debug logging helper
+    function debugLog(message, data) {
+        if (DEBUG) {
+            const debugLog = document.getElementById('debug-log');
+            
+            if (data) {
+                console.log('[DEBUG ' + new Date().toISOString().substring(11, 19) + ']', message, data);
+                if (debugLog) {
+                    const entry = document.createElement('div');
+                    entry.innerHTML = `<span class="text-muted">${new Date().toISOString().substring(11, 19)}</span> ${message} ${JSON.stringify(data)}`;
+                    debugLog.appendChild(entry);
+                    debugLog.scrollTop = debugLog.scrollHeight;
+                }
+            } else {
+                console.log('[DEBUG ' + new Date().toISOString().substring(11, 19) + ']', message);
+                if (debugLog) {
+                    const entry = document.createElement('div');
+                    entry.innerHTML = `<span class="text-muted">${new Date().toISOString().substring(11, 19)}</span> ${message}`;
+                    debugLog.appendChild(entry);
+                    debugLog.scrollTop = debugLog.scrollHeight;
+                }
+            }
+        }
+    }
+    
+    // Setup variables
+    let reconnectAttempts = 0;
+    let reconnectTimeout = null;
+    let chatSocket = null;
+    // Track sent message IDs to prevent duplicates
+    const sentMessageIds = new Set();
+    // Custom client-side message ID counter
+    let clientMessageCounter = 0;
+    
+    // Fix the WebSocket URL construction to handle special characters
+    const chatId = "{{ chat_id }}";
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    
+    // Try two different WebSocket URL approaches
+    // First, try with the current hostname and port 8001 (where Daphne is running)
+    const wsUrlDaphne = `${wsProtocol}${window.location.hostname}:8001/ws/chat/${chatId}/`;
+    // Second, as a fallback, try with the current host (which might include the correct port)
+    const wsUrlFallback = `${wsProtocol}${window.location.host}/ws/chat/${chatId}/`;
+    
+    // Track which URL works
+    let activeWsUrl = wsUrlDaphne;
+    
+    debugLog("Primary WebSocket URL:", wsUrlDaphne);
+    debugLog("Fallback WebSocket URL:", wsUrlFallback);
+    
+    const messagesContainer = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-message');
+    const endChatBtn = document.getElementById('endChatBtn');
+    const statusIndicator = document.getElementById('status-indicator');
+    const typingIndicator = document.getElementById('typing-indicator');
+    
+    // Add a debug container to the page
+    const debugContainer = document.createElement('div');
+    debugContainer.id = 'debug-container';
+    debugContainer.style.display = 'none';
+    debugContainer.innerHTML = `
+        <div style="position: fixed; bottom: 10px; right: 10px; z-index: 9999;">
+            <button id="debug-toggle" class="btn btn-sm btn-danger">Debug</button>
+        </div>
+        <div id="debug-panel" style="display: none; position: fixed; bottom: 50px; right: 10px; width: 400px; height: 300px; background: rgba(0,0,0,0.8); color: #fff; padding: 10px; overflow: auto; z-index: 9999; border-radius: 5px; font-family: monospace;">
+            <div id="debug-log"></div>
+            <div style="margin-top: 10px;">
+                <button id="reload-btn" class="btn btn-sm btn-warning">Reload Connection</button>
+                <button id="close-debug" class="btn btn-sm btn-secondary">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(debugContainer);
+    
+    // Debug panel toggle
+    document.getElementById('debug-toggle').addEventListener('click', function() {
+        const panel = document.getElementById('debug-panel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    document.getElementById('close-debug').addEventListener('click', function() {
+        document.getElementById('debug-panel').style.display = 'none';
+    });
+    
+    document.getElementById('reload-btn').addEventListener('click', function() {
+        debugLog("Manual connection reload requested");
+        retryConnection();
+    });
+    
+    // Function to initialize WebSocket connection
+    function initWebSocket() {
+        debugLog(`Attempt ${reconnectAttempts + 1} to connect WebSocket`);
+        
+        // Close existing socket if it exists
+        if (chatSocket) {
+            debugLog("Closing existing WebSocket connection");
+            chatSocket.close();
+        }
+        
+        // Create new WebSocket connection
+        try {
+            debugLog(`Creating new WebSocket connection to: ${activeWsUrl}`);
+            chatSocket = new WebSocket(activeWsUrl);
+            
+            // Set timeout for connection
+            const connectionTimeout = setTimeout(() => {
+                // If we're still connecting, try the fallback URL
+                if (chatSocket && chatSocket.readyState === WebSocket.CONNECTING) {
+                    debugLog("Connection timeout, trying fallback URL");
+                    chatSocket.close();
+                    
+                    // If we already tried the fallback, don't loop
+                    if (activeWsUrl === wsUrlFallback) {
+                        debugLog("Both URLs failed to connect");
+                        statusIndicator.innerHTML = '<span class="text-danger">●</span> Connection failed (check server)';
+                        document.getElementById('connection-error').style.display = 'block';
+                        return;
+                    }
+                    
+                    // Switch to fallback URL and try again
+                    activeWsUrl = wsUrlFallback;
+                    initWebSocket();
+                }
+            }, 5000);
+            
+            // WebSocket event listeners
+            chatSocket.onopen = function(e) {
+                clearTimeout(connectionTimeout);
+                debugLog(`WebSocket connection established successfully using ${activeWsUrl}`);
+                statusIndicator.innerHTML = '{% if chat_session.status == "waiting" %}<span class="text-warning">●</span> Waiting for agent...{% elif chat_session.status == "active" %}<span class="text-success">●</span> Agent is online{% else %}<span class="text-secondary">●</span> Chat closed{% endif %}';
+                reconnectAttempts = 0; // Reset reconnect counter on successful connection
+                chatInput.disabled = false;
+                chatForm.querySelector('button').disabled = false;
+                document.getElementById('connection-error').style.display = 'none';
+            };
+            
+            chatSocket.onmessage = function(e) {
+                debugLog("WebSocket message received:", e.data);
+                try {
+                    const data = JSON.parse(e.data);
+                    
+                    if (data.type === 'error') {
+                        debugLog("WebSocket error message:", data.message);
+                        alert(data.message);
+                        return;
+                    }
+                    
+                    // Handle status updates
+                    if (data.type === 'status_update') {
+                        debugLog("Status update received:", data.status);
+                        handleStatusUpdate(data.status);
+                        return;
+                    }
+                    
+                    // Add message to chat
+                    addMessage(data);
+                    
+                    // Log all message activities
+                    console.log("Message received and displayed:", data);
+                    
+                    // Update status for agent assignment
+                    if (data.type === 'system' && data.message.includes('has joined the chat')) {
+                        updateStatus('active');
+                    }
+                    
+                    // Update status when chat is closed
+                    if (data.type === 'system' && data.message.includes('closed')) {
+                        updateStatus('closed');
+                    }
+                } catch (error) {
+                    debugLog("Error parsing WebSocket message:", error);
+                    console.error("Failed to process message:", e.data, error);
+                }
+            };
+            
+            chatSocket.onclose = function(e) {
+                debugLog('Chat socket closed unexpectedly', e);
+                clearTimeout(connectionTimeout);
+                
+                if (e.code === 1000) {
+                    // Normal closure, don't reconnect
+                    statusIndicator.innerHTML = '<span class="text-secondary">●</span> Chat ended';
+                    chatInput.disabled = true;
+                    chatForm.querySelector('button').disabled = true;
+                    return;
+                }
+                
+                statusIndicator.innerHTML = '<span class="text-danger">●</span> Connection lost (reconnecting...)';
+                chatInput.disabled = true;
+                chatForm.querySelector('button').disabled = true;
+                
+                // Try to reconnect with increasing backoff
+                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    const backoff = Math.min(3000, 1000 * Math.pow(2, reconnectAttempts));
+                    reconnectAttempts++;
+                    debugLog(`Reconnecting in ${backoff}ms... (Attempt ${reconnectAttempts} of ${MAX_RECONNECT_ATTEMPTS})`);
+                    
+                    clearTimeout(reconnectTimeout);
+                    reconnectTimeout = setTimeout(initWebSocket, backoff);
+                } else {
+                    statusIndicator.innerHTML = '<span class="text-danger">●</span> Connection lost (reload page to try again)';
+                    document.getElementById('connection-error').style.display = 'block';
+                    debugLog("Maximum reconnection attempts reached");
+                }
+            };
+            
+            chatSocket.onerror = function(e) {
+                debugLog('WebSocket error:', e);
+                statusIndicator.innerHTML = '<span class="text-danger">●</span> Connection error';
+            };
+        } catch (error) {
+            debugLog("Error creating WebSocket:", error);
+            statusIndicator.innerHTML = '<span class="text-danger">●</span> Connection error';
+            document.getElementById('connection-error').style.display = 'block';
+        }
+    }
+    
+    // Function to retry connection
+    function retryConnection() {
+        debugLog("Manual retry requested");
+        reconnectAttempts = 0;
+        document.getElementById('connection-error').style.display = 'none';
+        // Try both URLs again
+        activeWsUrl = wsUrlDaphne;
+        initWebSocket();
+    }
+    
+    // Initialize the WebSocket connection
+    initWebSocket();
+    
+    // Function to insert quick reply text
+    function insertQuickReply(text) {
+        chatInput.value = text;
+        chatInput.focus();
+    }
+    
+    // Scroll to bottom of messages
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    // Add a new message to the chat
+    function addMessage(data) {
+        console.log("Adding message to chat:", data);
+        
+        // For agent messages with message_id, check if we've already displayed this message
+        if (data.is_agent === true && data.message_id) {
+            // If we've already displayed this message, don't add it again
+            if (sentMessageIds.has(data.message_id)) {
+                console.log("Skipping duplicate message with ID:", data.message_id);
+                return;
+            }
+            // Otherwise, add it to our set
+            sentMessageIds.add(data.message_id);
+        }
+        
+        const messageDiv = document.createElement('div');
+        
+        if (data.type === 'system') {
+            messageDiv.className = 'message message-system';
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${data.message}
+                </div>
+                <div class="message-time text-center">
+                    <small>${new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                </div>
+            `;
+        } else {
+            // Determine message type based on is_agent flag
+            const isUserMessage = data.is_agent === false;
+            console.log(`Message is from: ${isUserMessage ? 'User' : 'Agent'}, Username: ${data.username}, is_agent: ${data.is_agent}`);
+            
+            messageDiv.className = `message ${isUserMessage ? 'message-user' : 'message-agent'}`;
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    ${data.username} • ${new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </div>
+                <div class="message-bubble">
+                    ${data.message}
+                </div>
+            `;
+        }
+        
+        messagesContainer.appendChild(messageDiv);
+        
+        // Force style updates to ensure visibility
+        messageDiv.style.display = 'flex';
+        messageDiv.style.opacity = '1';
+        messageDiv.style.visibility = 'visible';
+        
+        console.log("Message added, now containing", messagesContainer.children.length, "messages");
+        
+        scrollToBottom();
+    }
+    
+    // Send a message when the form is submitted
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Check if the WebSocket is open
+        if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+            console.error("WebSocket not connected, can't send message");
+            statusIndicator.innerHTML = '<span class="text-danger">●</span> Connection lost (trying to reconnect...)';
+            initWebSocket(); // Try to reconnect
+            return;
+        }
+        
+        const message = chatInput.value.trim();
+        if (message) {
+            console.log("Sending message:", message);
+            // Generate a client-side message ID for tracking
+            const clientMessageId = `client-${Date.now()}-${clientMessageCounter++}`;
+            
+            const messageData = {
+                'type': 'message',
+                'message': message,
+                'username': '{{ username }}',
+                'is_agent': {% if is_agent %}true{% else %}false{% endif %},
+                'client_message_id': clientMessageId // Add client message ID for tracking
+            };
+            
+            try {
+                chatSocket.send(JSON.stringify(messageData));
+                console.log("Message sent:", messageData);
+                
+                // For agent messages, store the client message ID for deduplication
+                if ({% if is_agent %}true{% else %}false{% endif %}) {
+                    sentMessageIds.add(clientMessageId);
+                    // Don't display agent messages locally, wait for server echo
+                } else {
+                    // Immediately display the message in the UI without waiting for server echo
+                    // ONLY for non-agent messages to avoid duplicates
+                    addMessage({
+                        type: 'message',
+                        message: message,
+                        username: '{{ username }}',
+                        is_agent: {% if is_agent %}true{% else %}false{% endif %},
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                
+                chatInput.value = '';
+            } catch (error) {
+                console.error("Error sending message:", error);
+                alert("Error sending message. Please try again.");
+            }
+        }
+    });
+    
+    // End chat button handler
+    endChatBtn.addEventListener('click', function() {
+        const confirmClose = confirm('Are you sure you want to end this chat?');
+        if (confirmClose) {
+            debugLog('End chat button clicked, sending close_chat message');
+            
+            // Disable inputs immediately for better UX
+            chatInput.disabled = true;
+            chatForm.querySelector('button').disabled = true;
+            endChatBtn.disabled = true;
+            
+            // Show closing message
+            addMessage({
+                type: 'system',
+                message: 'Closing chat session...',
+                timestamp: new Date().toISOString()
+            });
+            
+            // Check if WebSocket is connected
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                // Send close chat message via WebSocket
+                chatSocket.send(JSON.stringify({
+                    'type': 'close_chat'
+                }));
+                
+                // Always use the API as well for redundancy
+                callCloseChatAPI();
+            } else {
+                // Use the API only
+                debugLog('WebSocket not connected, using API only to close chat');
+                callCloseChatAPI();
+            }
+        }
+    });
+    
+    // Function to call the close chat API
+    function callCloseChatAPI() {
+        fetch('{% url "livechat:close_chat" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                chat_id: '{{ chat_id }}'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            debugLog('Chat close API response:', data);
+            
+            // Update the chat UI
+            statusIndicator.innerHTML = '<span class="text-secondary">●</span> Chat closed';
+            
+            // Add a system message indicating the chat is closed
+            addMessage({
+                type: 'system',
+                message: 'This chat has been closed. Thank you for using our support.',
+                timestamp: new Date().toISOString()
+            });
+            
+            // If we're in an iframe, notify the parent
+            if (window.parent && window !== window.parent) {
+                try {
+                    window.parent.postMessage('chat-closed', '*');
+                    debugLog('Sent chat-closed message to parent window');
+                } catch (e) {
+                    debugLog('Error sending message to parent:', e);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error closing chat via API:', error);
+            debugLog('Error closing chat via API:', error);
+            
+            // Still show closed UI to user even if API call fails
+            statusIndicator.innerHTML = '<span class="text-danger">●</span> Error closing chat';
+            addMessage({
+                type: 'system',
+                message: 'There was an error closing the chat. Please try again or refresh the page.',
+                timestamp: new Date().toISOString()
+            });
+        });
+    }
+    
+    // Helper function to handle status updates
+    function handleStatusUpdate(status) {
+        updateStatus(status);
+        
+        // If the chat is closed, notify the parent (if we're in an iframe)
+        if (status === 'closed' && window.parent && window !== window.parent) {
+            try {
+                window.parent.postMessage('chat-closed', '*');
+                debugLog('Sent chat-closed message to parent window based on status update');
+            } catch (e) {
+                debugLog('Error sending message to parent:', e);
+            }
+        }
+    }
+
+    // Helper function to update the status UI
+    function updateStatus(status) {
+        switch(status) {
+            case 'closed':
+                statusIndicator.innerHTML = '<span class="text-secondary">●</span> Chat closed';
+                chatInput.disabled = true;
+                chatForm.querySelector('button').disabled = true;
+                endChatBtn.disabled = true;
+                break;
+            case 'active':
+                statusIndicator.innerHTML = '<span class="text-success">●</span> Agent is online';
+                chatInput.disabled = false;
+                chatForm.querySelector('button').disabled = false;
+                break;
+            case 'waiting':
+                statusIndicator.innerHTML = '<span class="text-warning">●</span> Waiting for agent...';
+                chatInput.disabled = false;
+                chatForm.querySelector('button').disabled = false;
+                break;
+            default:
+                debugLog('Unknown status:', status);
+        }
+    }
+</script>
+{% endblock %} 

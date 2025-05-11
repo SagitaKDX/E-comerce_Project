@@ -1,0 +1,112 @@
+{% extends 'custom_admin/crm/base.html' %}
+
+{% block title %}Packages | CRM System{% endblock %}
+
+{% block page_title %}Packages{% endblock %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Package List</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Package</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Sales</th>
+                        <th>Rating</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for package in packages %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if package.image %}
+                                    <img src="{{ package.image.url }}" alt="{{ package.name }}" width="40" height="40" class="rounded me-2">
+                                {% endif %}
+                                <div>
+                                    <div class="fw-bold">{{ package.name }}</div>
+                                    <small class="text-muted">{{ package.description|truncatechars:50 }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ package.category.name }}</td>
+                        <td>${{ package.discounted_price }}</td>
+                        <td>
+                            <span class="badge {% if package.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ package.is_active|yesno:"Active,Inactive" }}
+                            </span>
+                        </td>
+                        <td>{{ package.sold_count }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="rating-stars me-2">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= package.avg_rating %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-warning"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span>{{ package.avg_rating|floatformat:1 }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <a href="{% url 'crm:crm_package_detail' package.id %}" class="btn btn-sm btn-info">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">No packages found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if packages.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if packages.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ packages.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for i in packages.paginator.page_range %}
+                    {% if packages.number == i %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ i }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if packages.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ packages.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

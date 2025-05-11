@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% block title %}Order #{{ order.order_number }} - Bill{% endblock %}
+{% block extra_css %}
+<style>
+.bill-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    background-color: white;
+}
+.bill-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f8f9fa;
+}
+.bill-logo {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #dc3545;
+    margin-bottom: 0.5rem;
+}
+.bill-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+}
+.bill-details, .customer-details {
+    flex: 1;
+}
+.bill-barcode {
+    text-align: center;
+    margin: 2rem 0;
+}
+.bill-barcode img {
+    max-width: 300px;
+}
+.bill-items {
+    margin-bottom: 2rem;
+}
+.bill-items table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.bill-items th, .bill-items td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #dee2e6;
+}
+.bill-items th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+.bill-total {
+    text-align: right;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 2px solid #f8f9fa;
+}
+.bill-total-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5rem;
+}
+.bill-total-label {
+    font-weight: 600;
+    margin-right: 2rem;
+    min-width: 150px;
+}
+.bill-footer {
+    text-align: center;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 2px solid #f8f9fa;
+    color: #6c757d;
+}
+@media print {
+    .no-print {
+        display: none;
+    }
+    .bill-container {
+        border: none;
+        padding: 0;
+        margin: 0;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bill-container">
+    <div class="bill-header">
+        <div class="bill-logo">E-Shop</div>
+        <p>Order Bill</p>
+    </div>
+    
+    <div class="bill-info">
+        <div class="bill-details">
+            <h5>Order Details</h5>
+            <p><strong>Order Number:</strong> {{ order.order_number }}</p>
+            <p><strong>Date:</strong> {{ order.created_at|date:"F j, Y" }}</p>
+            <p><strong>Status:</strong> {{ order.status|title }}</p>
+            <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+        </div>
+        <div class="customer-details">
+            <h5>Shipping Address</h5>
+            <p>{{ order.shipping_address.name }}</p>
+            <p>{{ order.shipping_address.address_line1 }}</p>
+            {% if order.shipping_address.address_line2 %}
+                <p>{{ order.shipping_address.address_line2 }}</p>
+            {% endif %}
+            <p>{{ order.shipping_address.city }}, {{ order.shipping_address.state }} {{ order.shipping_address.postal_code }}</p>
+            <p>{{ order.shipping_address.country }}</p>
+        </div>
+    </div>
+    
+    <div class="bill-barcode">
+        {% if order.barcode %}
+            <img src="{{ order.barcode.url }}" alt="Order Barcode">
+            <p class="mt-2">{{ order.order_number }}</p>
+        {% endif %}
+    </div>
+    
+    <div class="bill-items">
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                    <tr>
+                        <td>{{ item.product.name }}</td>
+                        <td>${{ item.price }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>${{ item.get_total }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="bill-total">
+        <div class="bill-total-row">
+            <div class="bill-total-label">Subtotal:</div>
+            <div>${{ order.get_subtotal }}</div>
+        </div>
+        <div class="bill-total-row">
+            <div class="bill-total-label">Total:</div>
+            <div class="h4 mb-0">${{ order.total_price }}</div>
+        </div>
+    </div>
+    
+    <div class="bill-footer">
+        <p>Thank you for shopping with us!</p>
+        <p class="small">For any questions, please contact our customer support.</p>
+    </div>
+    
+    <div class="text-center mt-4 no-print">
+        <button onclick="window.print()" class="btn btn-primary">
+            <i class="fas fa-print me-2"></i>Print Bill
+        </button>
+        <a href="{% url 'profile' %}#orders" class="btn btn-secondary ms-2">
+            <i class="fas fa-arrow-left me-2"></i>Back to Orders
+        </a>
+    </div>
+</div>
+{% endblock %} 

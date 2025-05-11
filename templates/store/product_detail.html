@@ -1,0 +1,794 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.name }} - E-Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-gallery {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    .product-detail-img {
+        width: 100%;
+        border-radius: 10px;
+        transition: transform 0.3s ease;
+    }
+    .product-detail-img:hover {
+        transform: scale(1.02);
+    }
+    .product-info {
+        padding: 2rem;
+    }
+    .product-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: #212529;
+    }
+    .product-category {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #6c757d;
+        margin-bottom: 1.5rem;
+    }
+    .product-category a {
+        color: #dc3545;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+    .product-category a:hover {
+        color: #c82333;
+        text-decoration: underline;
+    }
+    .product-price {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #dc3545;
+        margin-bottom: 1.5rem;
+    }
+    .product-divider {
+        margin: 1.5rem 0;
+        border-color: #f1f1f1;
+    }
+    .product-section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #343a40;
+    }
+    .product-description {
+        font-size: 1rem;
+        line-height: 1.7;
+        color: #495057;
+    }
+    .product-stats {
+        margin-top: 0.5rem;
+        width: 100%;
+    }
+    .product-stats .badge {
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 0.5rem 0.75rem;
+        border-radius: 50px;
+    }
+    .stock-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+    .in-stock {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .out-of-stock {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .quantity-input {
+        width: 120px;
+        border-radius: 50px;
+        border: 1px solid #ced4da;
+        padding: 0.5rem 1rem;
+        text-align: center;
+        margin-right: 1rem;
+    }
+    .btn-add-to-cart {
+        border-radius: 50px;
+        padding: 0.7rem 2rem;
+        font-weight: 600;
+        font-size: 1rem;
+        background-color: #dc3545;
+        border-color: #dc3545;
+        transition: all 0.3s ease;
+    }
+    .btn-add-to-cart:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+        transform: translateY(-2px);
+    }
+    .comments-section {
+        margin-top: 4rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e9ecef;
+    }
+    .comments-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+    }
+    .comments-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background-color: #dc3545;
+        color: white;
+        font-size: 0.9rem;
+        border-radius: 50%;
+        margin-left: 0.8rem;
+    }
+    .comment-form-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    .comment-form-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #343a40;
+    }
+    .comment-submit-btn {
+        border-radius: 50px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    .comment-submit-btn:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+    }
+    .comment-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.03);
+        margin-bottom: 1.5rem;
+        transition: transform 0.2s ease;
+    }
+    .comment-card:hover {
+        transform: translateY(-3px);
+    }
+    .comment-user {
+        font-weight: 600;
+        color: #495057;
+    }
+    .comment-date {
+        font-size: 0.85rem;
+        color: #adb5bd;
+    }
+    .comment-text {
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: #495057;
+        margin-top: 1rem;
+    }
+    .no-comments {
+        text-align: center;
+        padding: 3rem;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    .no-comments-icon {
+        font-size: 3rem;
+        color: #dee2e6;
+        margin-bottom: 1rem;
+    }
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0;
+        margin-bottom: 2rem;
+    }
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "›";
+        font-size: 1.2rem;
+        line-height: 1;
+        vertical-align: middle;
+    }
+    .ratings-section {
+        margin-top: 4rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e9ecef;
+    }
+    .ratings-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+    }
+    .ratings-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background-color: #dc3545;
+        color: white;
+        font-size: 0.9rem;
+        border-radius: 50%;
+        margin-left: 0.8rem;
+    }
+    .rating-form-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    .rating-form-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #343a40;
+    }
+    .rating-stars-input {
+        display: flex;
+        align-items: center;
+    }
+    .star-label {
+        cursor: pointer;
+        position: relative;
+    }
+    .star-label input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+    .star-icon {
+        font-size: 1.5rem;
+        color: #ced4da;
+        transition: all 0.2s ease;
+    }
+    .star-value {
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.75rem;
+        background: #343a40;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    .star-label:hover .star-value {
+        opacity: 1;
+    }
+    .star-label input[type="radio"]:checked + .star-icon,
+    .star-label:hover .star-icon,
+    .star-label:hover ~ .star-label .star-icon {
+        color: #ffc107;
+    }
+    .rating-submit-btn {
+        border-radius: 50px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+    }
+    .rating-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.03);
+        margin-bottom: 1.5rem;
+        transition: transform 0.2s ease;
+    }
+    .rating-card:hover {
+        transform: translateY(-3px);
+    }
+    .rating-user {
+        font-weight: 600;
+        color: #495057;
+    }
+    .rating-date {
+        font-size: 0.85rem;
+        color: #adb5bd;
+    }
+    .no-ratings {
+        text-align: center;
+        padding: 3rem;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    .no-ratings-icon {
+        font-size: 3rem;
+        color: #dee2e6;
+        margin-bottom: 1rem;
+    }
+    .product-rating {
+        margin-bottom: 1rem;
+    }
+    .rating-stars .fas, .rating-stars .far, .rating-stars .fa-star-half-alt {
+        color: #ffc107;
+        font-size: 1.2rem;
+    }
+    .ratings-section, .comments-section {
+        margin-top: 4rem;
+        padding: 1.5rem;
+        border-radius: 10px;
+        background-color: #fff;
+        box-shadow: 0 0 15px rgba(0,0,0,0.03);
+    }
+    
+    .section-header {
+        border-left: 5px solid #ffc107;
+    }
+    
+    .comments-section .section-header {
+        border-left: 5px solid #0d6efd;
+    }
+    
+    .ratings-badge, .comments-badge {
+        font-size: 0.9rem;
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .section-divider {
+        position: relative;
+        text-align: center;
+    }
+    
+    .divider {
+        border-top: 2px dashed #e9ecef;
+        margin: 2rem 0;
+    }
+    
+    .card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
+    }
+    
+    .rating-stars .fas, .rating-stars .far, .rating-stars .fa-star-half-alt {
+        color: #ffc107;
+        font-size: 1.2rem;
+    }
+    
+    .star-label {
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .star-label input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+    
+    .star-icon {
+        font-size: 1.8rem;
+        color: #ced4da;
+        transition: all 0.2s ease;
+    }
+    
+    .star-value {
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.75rem;
+        background: #343a40;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    .star-label:hover .star-value {
+        opacity: 1;
+    }
+    
+    .star-label input[type="radio"]:checked + .star-icon,
+    .star-label:hover .star-icon,
+    .star-label:hover ~ .star-label .star-icon {
+        color: #ffc107;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'product_list' %}">Products</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'category_detail' product.category.slug %}">{{ product.category.name }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="product-gallery">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-detail-img">
+            {% else %}
+                <img src="https://via.placeholder.com/600x600?text=No+Image" alt="{{ product.name }}" class="product-detail-img">
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="product-info">
+            <h1 class="product-title">{{ product.name }}</h1>
+            <p class="product-category">
+                Category: <a href="{% url 'category_detail' product.category.slug %}">{{ product.category.name }}</a>
+            </p>
+            <h3 class="product-price">${{ product.price }}</h3>
+            
+            <hr class="product-divider">
+            
+            <div class="product-rating mb-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rating-stars">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= product.average_rating|floatformat:"0" %}
+                                <i class="fas fa-star text-warning"></i>
+                            {% elif forloop.counter <= product.average_rating|add:"0.5"|floatformat:"0" %}
+                                <i class="fas fa-star-half-alt text-warning"></i>
+                            {% else %}
+                                <i class="far fa-star text-warning"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="rating-count ms-2">
+                        <span>{{ product.average_rating|floatformat:1 }}</span>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between product-stats">
+                    <span class="badge bg-primary"><i class="fas fa-comment-dots me-1"></i>{{ product.total_ratings }} {{ product.total_ratings|pluralize:"rating,ratings" }}</span>
+                    <span class="badge bg-success"><i class="fas fa-shopping-bag me-1"></i>{{ product.sold_count }} {{ product.sold_count|pluralize:"sale,sales" }}</span>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <h4 class="product-section-title">Description</h4>
+                <p class="product-description">{{ product.description }}</p>
+            </div>
+            
+            <div class="mb-4">
+                {% if product.stock > 0 %}
+                    <span class="stock-badge in-stock">
+                        <i class="fas fa-check-circle me-2"></i>In Stock ({{ product.stock }} available)
+                    </span>
+                {% else %}
+                    <span class="stock-badge out-of-stock">
+                        <i class="fas fa-times-circle me-2"></i>Out of Stock
+                    </span>
+                {% endif %}
+            </div>
+            
+            {% if product.stock > 0 %}
+                <form action="{% url 'add_to_cart' product.id %}" method="post" class="d-flex align-items-center">
+                    {% csrf_token %}
+                    <div class="me-3">
+                        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="form-control quantity-input">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-add-to-cart">
+                        <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+                    </button>
+                </form>
+            {% else %}
+                <button class="btn btn-secondary btn-add-to-cart" disabled>
+                    <i class="fas fa-shopping-cart me-2"></i>Out of Stock
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- RATINGS SECTION FIRST -->
+<div class="ratings-section mt-5">
+    <div class="section-header bg-light p-3 rounded mb-4">
+        <h3 class="ratings-title mb-0">
+            <i class="fas fa-star text-warning me-2"></i>Product Ratings <span class="ratings-badge bg-primary text-white px-2 py-1 rounded-circle ms-2">{{ ratings|length }}</span>
+        </h3>
+    </div>
+    
+    {% if user_has_purchased and not user_has_rated %}
+        <div class="card rating-form-card mb-4 border-warning shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="rating-form-title mb-0"><i class="fas fa-pen me-2"></i>Rate This Product</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" action="{% url 'add_rating' product.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ rating_form.rating.label }}</label>
+                        <div class="rating-stars-input mb-2">
+                            {% for radio in rating_form.rating %}
+                                <label class="star-label mx-1">
+                                    {{ radio.tag }}
+                                    <span class="star-icon{% if forloop.counter == 5 %} best{% elif forloop.counter == 1 %} worst{% endif %}">
+                                        <i class="fas fa-star"></i>
+                                        <span class="star-value">{{ radio.choice_label }}</span>
+                                    </span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ rating_form.feedback.label_tag }}
+                        {{ rating_form.feedback }}
+                        {% if rating_form.feedback.errors %}
+                            <div class="text-danger mt-2">
+                                {% for error in rating_form.feedback.errors %}
+                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-warning rating-submit-btn">
+                        <i class="fas fa-star me-2"></i>Submit Rating
+                    </button>
+                </form>
+            </div>
+        </div>
+    {% elif not user.is_authenticated %}
+        <div class="alert alert-warning mb-4 d-flex align-items-center">
+            <i class="fas fa-lock me-3" style="font-size: 1.5rem;"></i>
+            <div>
+                <strong>Please log in to rate this product.</strong>
+                <div>
+                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-outline-warning btn-sm mt-2">
+                        <i class="fas fa-sign-in-alt me-1"></i>Login to Rate
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% elif not user_has_purchased %}
+        <div class="alert alert-info mb-4">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-info-circle me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                    <strong>You can only rate products that you have purchased.</strong>
+                </div>
+            </div>
+        </div>
+    {% elif user_has_rated and user_rating %}
+        <div class="card mb-4 border-warning shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-user-check me-2"></i>Your Rating</h5>
+                    <div>
+                        <a href="#editRatingModal" data-bs-toggle="modal" class="btn btn-sm btn-dark me-2">
+                            <i class="fas fa-edit me-1"></i>Edit
+                        </a>
+                        <a href="#deleteRatingModal" data-bs-toggle="modal" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash me-1"></i>Delete
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="rating-display mb-2">
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= user_rating.rating|floatformat:"0" %}
+                            <i class="fas fa-star text-warning"></i>
+                        {% else %}
+                            <i class="far fa-star text-warning"></i>
+                        {% endif %}
+                    {% endfor %}
+                    <span class="rating-value ms-2">{{ user_rating.rating }} out of 5</span>
+                </div>
+                <p class="mb-0">{{ user_rating.feedback }}</p>
+                <small class="text-muted mt-2 d-block">
+                    Posted on {{ user_rating.created_at|date:"F j, Y" }}
+                </small>
+            </div>
+        </div>
+        
+        <!-- Edit Rating Modal -->
+        <div class="modal fade" id="editRatingModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title">Edit Your Rating</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="post" action="{% url 'edit_rating' user_rating.id %}">
+                        <div class="modal-body">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Rating</label>
+                                <div class="rating-stars-edit mb-2">
+                                    {% for i in "12345" %}
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="rating" value="{{ forloop.counter }}" id="edit-rating-{{ forloop.counter }}" {% if user_rating.rating == forloop.counter %}checked{% endif %}>
+                                            <label class="form-check-label" for="edit-rating-{{ forloop.counter }}">
+                                                {{ forloop.counter }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Your Review</label>
+                                <textarea name="feedback" class="form-control" rows="4">{{ user_rating.feedback }}</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-warning">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Delete Rating Modal -->
+        <div class="modal fade" id="deleteRatingModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">Delete Your Rating</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete your rating for this product? This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <form method="post" action="{% url 'delete_rating' user_rating.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Delete Rating</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    {% if ratings %}
+        <div class="other-ratings mt-4">
+            <h5 class="mb-3 border-bottom pb-2"><i class="fas fa-users me-2"></i>Customer Ratings</h5>
+            <div class="row">
+                {% for rating in ratings %}
+                    {% if rating.user != user or not user.is_authenticated %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card rating-card h-100 border-light shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="rating-user mb-0">
+                                            <i class="fas fa-user-circle me-2"></i>{{ rating.user.username }}
+                                        </h6>
+                                        <small class="rating-date">
+                                            <i class="fas fa-calendar-alt me-1"></i>{{ rating.created_at|date:"F j, Y" }}
+                                        </small>
+                                    </div>
+                                    <div class="rating-stars mb-2">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= rating.rating %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="far fa-star text-warning"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <span class="rating-value ms-2">{{ rating.rating }} out of 5</span>
+                                    </div>
+                                    <p class="rating-text mb-0">{{ rating.feedback }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% elif not user_has_rated %}
+        <div class="no-ratings bg-light p-4 rounded text-center">
+            <div class="no-ratings-icon mb-3">
+                <i class="far fa-star fa-3x text-warning"></i>
+            </div>
+            <h5>No ratings yet</h5>
+            <p class="text-muted">Be the first to rate this product!</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- DIVIDER BETWEEN SECTIONS -->
+<div class="section-divider my-5">
+    <hr class="divider">
+</div>
+
+<!-- COMMENTS SECTION SECOND -->
+<div class="comments-section">
+    <div class="section-header bg-light p-3 rounded mb-4">
+        <h3 class="comments-title mb-0">
+            <i class="fas fa-comments me-2 text-primary"></i>Customer Comments <span class="comments-badge bg-primary text-white px-2 py-1 rounded-circle ms-2">{{ comments.count }}</span>
+        </h3>
+    </div>
+    
+    {% if user.is_authenticated %}
+        <div class="card comment-form-card mb-4 border-primary shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="comment-form-title mb-0"><i class="fas fa-pen me-2"></i>Add Your Comment</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" action="{% url 'add_comment' product.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ comment_form.text.label_tag }}
+                        {{ comment_form.text }}
+                        {% if comment_form.text.errors %}
+                            <div class="text-danger mt-2">
+                                {% for error in comment_form.text.errors %}
+                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary comment-submit-btn">
+                        <i class="fas fa-paper-plane me-2"></i>Submit Comment
+                    </button>
+                </form>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-primary mb-4 d-flex align-items-center">
+            <i class="fas fa-lock me-3" style="font-size: 1.5rem;"></i>
+            <div>
+                <strong>Please log in to add a comment.</strong>
+                <div>
+                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-outline-primary btn-sm mt-2">
+                        <i class="fas fa-sign-in-alt me-1"></i>Login to Comment
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    {% if comments %}
+        <div class="row">
+            {% for comment in comments %}
+                <div class="col-md-6 mb-3">
+                    <div class="card comment-card h-100 border-light shadow-sm">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="comment-user mb-0">
+                                    <i class="fas fa-user-circle me-2"></i>{{ comment.user.username }}
+                                </h6>
+                                <small class="comment-date">
+                                    <i class="fas fa-clock me-1"></i>{{ comment.created_at|date:"F j, Y, g:i a" }}
+                                </small>
+                            </div>
+                            <p class="comment-text mb-0">{{ comment.text }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-comments bg-light p-4 rounded text-center">
+            <div class="no-comments-icon mb-3">
+                <i class="far fa-comment-dots fa-3x text-primary"></i>
+            </div>
+            <h5>No comments yet</h5>
+            <p class="text-muted">Be the first to share your thoughts about this product!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

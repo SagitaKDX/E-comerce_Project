@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chat Error{% endblock %}
+
+{% block extra_css %}
+<style>
+    .error-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 50px 0;
+        text-align: center;
+    }
+    
+    .error-icon {
+        font-size: 80px;
+        color: #dc3545;
+        margin-bottom: 20px;
+    }
+    
+    .error-code {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="error-container">
+        <div class="error-icon">
+            <i class="fas fa-exclamation-circle"></i>
+        </div>
+        
+        <div class="error-code">Chat Error</div>
+        
+        <h2 class="mb-4">Oops! Something went wrong</h2>
+        
+        <div class="alert alert-danger mb-4">
+            {{ error|default:"An unexpected error occurred with the chat system." }}
+        </div>
+        
+        <p class="mb-4">
+            Please try again later or contact our support team if the problem persists.
+        </p>
+        
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'livechat:start_chat' %}" class="btn btn-primary">
+                <i class="fas fa-redo me-2"></i> Try Again
+            </a>
+            <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-home me-2"></i> Return to Homepage
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

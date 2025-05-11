@@ -1,0 +1,218 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}Promotional Banners - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4 mb-4">Promotional Banners</h1>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="filter-tabs">
+            <div class="nav nav-tabs nav-fill">
+                <a href="{% url 'admin_dashboard:admin_banners' %}" class="nav-link {% if not status_filter %}active{% endif %}">
+                    <i class="fas fa-list-ul me-1"></i> All Banners
+                </a>
+                <a href="{% url 'admin_dashboard:admin_banners' %}?status=active" class="nav-link {% if status_filter == 'active' %}active{% endif %} text-success">
+                    <i class="fas fa-check-circle me-1"></i> Active
+                </a>
+                <a href="{% url 'admin_dashboard:admin_banners' %}?status=upcoming" class="nav-link {% if status_filter == 'upcoming' %}active{% endif %} text-info">
+                    <i class="fas fa-clock me-1"></i> Upcoming
+                </a>
+                <a href="{% url 'admin_dashboard:admin_banners' %}?status=expired" class="nav-link {% if status_filter == 'expired' %}active{% endif %} text-warning">
+                    <i class="fas fa-calendar-times me-1"></i> Expired
+                </a>
+                <a href="{% url 'admin_dashboard:admin_banners' %}?status=inactive" class="nav-link {% if status_filter == 'inactive' %}active{% endif %} text-danger">
+                    <i class="fas fa-ban me-1"></i> Inactive
+                </a>
+            </div>
+        </div>
+        <a href="{% url 'home' %}" target="_blank" class="btn btn-primary">
+            <i class="fas fa-eye me-1"></i> View Homepage
+        </a>
+    </div>
+    
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{% url 'admin_dashboard:admin_banners' %}{% if status_filter %}?status={{ status_filter }}&{% else %}?{% endif %}download=true" class="btn btn-secondary">
+            <i class="fas fa-download me-1"></i> Export as CSV
+        </a>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-image me-1"></i>
+                Manage Promotional Banners
+            </div>
+            <div>
+                <a href="{% url 'admin_dashboard:admin_banner_add' %}" class="btn btn-success btn-sm">
+                    <i class="fas fa-plus me-1"></i> Add Banner
+                </a>
+                <a href="{% url 'admin_dashboard:admin_banner_reorder' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-arrows-alt me-1"></i> Reorder Banners
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if page_obj %}
+                <div class="row">
+                    {% for banner in page_obj %}
+                        <div class="col-md-4">
+                            <div class="card banner-card">
+                                <div class="position-relative">
+                                    {% if banner.image %}
+                                        <img src="{{ banner.image.url }}" alt="{{ banner.title }}" class="card-img-top">
+                                    {% else %}
+                                        <div class="bg-light card-img-top d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-image fa-3x text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% with status=banner.get_status %}
+                                        {% if status == 'active' %}
+                                            <span class="badge bg-success badge-corner">Active</span>
+                                        {% elif status == 'upcoming' %}
+                                            <span class="badge bg-info badge-corner">Upcoming</span>
+                                        {% elif status == 'expired' %}
+                                            <span class="badge bg-warning badge-corner">Expired</span>
+                                        {% else %}
+                                            <span class="badge bg-danger badge-corner">Inactive</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                    
+                                    <span class="date-badge">
+                                        <i class="fas fa-tag me-1"></i>Order: {{ banner.order }}
+                                    </span>
+                                </div>
+                                
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">{{ banner.title }}</h5>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'admin_dashboard:admin_banner_edit' banner.id %}" class="btn btn-primary" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'admin_dashboard:admin_banner_delete' banner.id %}" class="btn btn-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body">
+                                    <div class="text-muted mb-2">{{ banner.subtitle }}</div>
+                                    
+                                    <div class="mb-2">
+                                        <span class="badge bg-info">{{ banner.button_text }}</span>
+                                        <small class="text-muted">{{ banner.get_link_type_display }}</small>
+                                    </div>
+                                    
+                                    <div class="small">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <i class="fas fa-calendar-alt text-primary me-1"></i>
+                                                {% if banner.start_date %}
+                                                    <span title="Start date">From: {{ banner.start_date|date:"M d, Y" }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">No start date</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-6 text-end">
+                                                {% if banner.end_date %}
+                                                    <span title="End date">To: {{ banner.end_date|date:"M d, Y" }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">No end date</span>
+                                                {% endif %}
+                                                <i class="fas fa-calendar-times text-danger ms-1"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-footer text-muted">
+                                    <small><i class="fas fa-clock me-1"></i>Created: {{ banner.created_at|date:"M d, Y" }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                {% include 'custom_admin/includes/pagination.html' with page_obj=page_obj %}
+            {% else %}
+                <div class="alert alert-info mb-0">
+                    No promotional banners found. <a href="{% url 'admin_dashboard:admin_banner_add' %}">Add your first banner</a>.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.filter-tabs {
+    width: 70%;
+}
+.filter-tabs .nav-tabs {
+    border-bottom: 0;
+}
+.filter-tabs .nav-link {
+    font-weight: 500;
+    border-radius: 0.5rem 0.5rem 0 0;
+    transition: all 0.2s ease;
+    padding: 0.75rem 1.25rem;
+    margin-right: 0.25rem;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+.filter-tabs .nav-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.filter-tabs .nav-link.active {
+    background-color: #fff;
+    border-bottom-color: #fff;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Banner Card Styles */
+.banner-card {
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+}
+.banner-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+}
+.banner-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0,0,0,0.125);
+}
+.banner-card .card-img-top {
+    height: 150px;
+    object-fit: cover;
+}
+.banner-card .badge-corner {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+}
+.banner-card .date-badge {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+</style>
+{% endblock %} 

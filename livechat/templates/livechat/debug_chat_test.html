@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Debug Test Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #log-container {
+            height: 300px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            font-family: monospace;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        
+        .log-info { color: #0d6efd; }
+        .log-success { color: #198754; }
+        .log-warning { color: #ffc107; }
+        .log-error { color: #dc3545; }
+        
+        .chat-container {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 15px;
+            max-width: 80%;
+            position: relative;
+            clear: both;
+        }
+        
+        .message-user {
+            background-color: #0d6efd;
+            color: white;
+            float: right;
+        }
+        
+        .message-agent {
+            background-color: #f8f9fa;
+            color: #212529;
+            float: left;
+        }
+        
+        .message-system {
+            background-color: #6c757d;
+            color: white;
+            float: none;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+            max-width: 90%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <h1 class="mb-4">Chat Debug Test Page</h1>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        Server Information
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Server Time:</strong> {{ timestamp }}</p>
+                        <p><strong>Server Version:</strong> {{ server_version }}</p>
+                        <p><strong>User:</strong> {{ user.username }} ({{ user.is_authenticated|yesno:"Authenticated,Anonymous" }})</p>
+                        <p><strong>Client IP:</strong> {{ client_ip }}</p>
+                        <p><strong>Debug Mode:</strong> {{ debug_mode|yesno:"Enabled,Disabled" }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        WebSocket Status
+                    </div>
+                    <div class="card-body">
+                        <p><strong>WebSocket Status:</strong> <span id="ws-status">Not Connected</span></p>
+                        <p><strong>Room ID:</strong> <span id="room-id">None</span></p>
+                        <p><strong>Create Room Response:</strong> <span id="create-room-response">None</span></p>
+                        
+                        <div class="mt-3">
+                            <button id="test-ws-health" class="btn btn-sm btn-outline-primary me-2">Check WebSocket Health</button>
+                            <button id="create-room" class="btn btn-sm btn-success me-2">Create Chat Room</button>
+                            <button id="connect-ws" class="btn btn-sm btn-primary" disabled>Connect WebSocket</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h3>Debug Log</h3>
+                <div id="log-container" class="mb-3"></div>
+                <div class="d-flex">
+                    <button id="clear-log" class="btn btn-sm btn-outline-danger me-2">Clear Log</button>
+                    <button id="send-test-message" class="btn btn-sm btn-outline-primary me-2" disabled>Send Test Message</button>
+                    <button id="force-reconnect" class="btn btn-sm btn-outline-warning" disabled>Force Reconnect</button>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <h3>Chat Preview</h3>
+                <div id="chat-container" class="chat-container mb-3"></div>
+                
+                <div class="input-group">
+                    <input type="text" id="message-input" class="form-control" placeholder="Type a message" disabled>
+                    <button id="send-message" class="btn btn-primary" disabled>Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Debug functions
+        const logContainer = document.getElementById('log-container');
+        const chatContainer = document.getElementById('chat-container');
+        const wsStatusEl = document.getElementById('ws-status');
+        const roomIdEl = document.getElementById('room-id');
+        const createRoomResponseEl = document.getElementById('create-room-response');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-message');
+        const connectButton = document.getElementById('connect-ws');
+        const createRoomButton = document.getElementById('create-room');
+        const sendTestButton = document.getElementById('send-test-message');
+        const forceReconnectButton = document.getElementById('force-reconnect');
+        
+        // WebSocket
+        let chatSocket = null;
+        let roomId = null;
+        
+        // Log functions
+        function logInfo(message) {
+            const entry = document.createElement('div');
+            entry.className = 'log-info';
+            entry.innerHTML = `[INFO] ${new Date().toLocaleTimeString()}: ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        function logSuccess(message) {
+            const entry = document.createElement('div');
+            entry.className = 'log-success';
+            entry.innerHTML = `[SUCCESS] ${new Date().toLocaleTimeString()}: ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        function logWarning(message) {
+            const entry = document.createElement('div');
+            entry.className = 'log-warning';
+            entry.innerHTML = `[WARNING] ${new Date().toLocaleTimeString()}: ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        function logError(message) {
+            const entry = document.createElement('div');
+            entry.className = 'log-error';
+            entry.innerHTML = `[ERROR] ${new Date().toLocaleTimeString()}: ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        // Chat functions
+        function addMessageToChat(sender, message, isSystem = false) {
+            const messageEl = document.createElement('div');
+            
+            if (isSystem) {
+                messageEl.className = 'message message-system';
+                messageEl.textContent = message;
+            } else {
+                messageEl.className = `message message-${sender.toLowerCase() === 'user' ? 'user' : 'agent'}`;
+                messageEl.innerHTML = `<strong>${sender}:</strong> ${message}`;
+            }
+            
+            chatContainer.appendChild(messageEl);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // WebSocket functions
+        function connectWebSocket(chatRoomId) {
+            if (!chatRoomId) {
+                logError('No room ID provided for WebSocket connection');
+                return;
+            }
+            
+            logInfo(`Connecting to WebSocket for room ${chatRoomId}`);
+            
+            // Close existing connection if any
+            if (chatSocket && chatSocket.readyState !== WebSocket.CLOSED) {
+                logInfo('Closing existing WebSocket connection');
+                chatSocket.close();
+            }
+            
+            wsStatusEl.textContent = 'Connecting...';
+            wsStatusEl.style.color = 'orange';
+            
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            const wsPath = `${wsProtocol}${window.location.hostname}:9000/ws/livechat/${chatRoomId}/`;
+            
+            logInfo(`WebSocket URL: ${wsPath}`);
+            
+            try {
+                chatSocket = new WebSocket(wsPath);
+                
+                chatSocket.onopen = function(e) {
+                    logSuccess('WebSocket connection established');
+                    wsStatusEl.textContent = 'Connected';
+                    wsStatusEl.style.color = 'green';
+                    
+                    // Enable UI elements
+                    messageInput.disabled = false;
+                    sendButton.disabled = false;
+                    sendTestButton.disabled = false;
+                    forceReconnectButton.disabled = false;
+                    
+                    // Send initial message
+                    try {
+                        chatSocket.send(JSON.stringify({
+                            'type': 'user_waiting',
+                            'message': 'User waiting for agent from debug page',
+                            'timestamp': new Date().toISOString()
+                        }));
+                        logInfo('Sent user_waiting message');
+                    } catch (error) {
+                        logError(`Error sending initial message: ${error.message}`);
+                    }
+                    
+                    // Add system message to chat
+                    addMessageToChat('System', 'Connected to chat server', true);
+                };
+                
+                chatSocket.onmessage = function(e) {
+                    logInfo(`Message received: ${e.data}`);
+                    
+                    try {
+                        const data = JSON.parse(e.data);
+                        logInfo(`Message type: ${data.type}`);
+                        
+                        if (data.type === 'chat_message') {
+                            const sender = data.is_agent ? 'Agent' : 'User';
+                            addMessageToChat(sender, data.message);
+                        } else if (data.type === 'system_message') {
+                            addMessageToChat('System', data.message, true);
+                        } else {
+                            logInfo(`Unhandled message type: ${data.type}`);
+                        }
+                    } catch (error) {
+                        logError(`Error parsing message: ${error.message}`);
+                    }
+                };
+                
+                chatSocket.onclose = function(e) {
+                    if (e.wasClean) {
+                        logInfo(`Connection closed cleanly, code=${e.code}, reason=${e.reason}`);
+                    } else {
+                        logError('Connection died');
+                    }
+                    
+                    wsStatusEl.textContent = 'Disconnected';
+                    wsStatusEl.style.color = 'red';
+                    
+                    // Disable UI elements
+                    messageInput.disabled = true;
+                    sendButton.disabled = true;
+                    sendTestButton.disabled = true;
+                    
+                    // Enable reconnect button
+                    connectButton.disabled = false;
+                    forceReconnectButton.disabled = true;
+                };
+                
+                chatSocket.onerror = function(error) {
+                    logError(`WebSocket Error: ${error.message || 'Unknown error'}`);
+                    wsStatusEl.textContent = 'Error';
+                    wsStatusEl.style.color = 'red';
+                };
+            } catch (error) {
+                logError(`Failed to create WebSocket: ${error.message}`);
+                wsStatusEl.textContent = 'Creation Failed';
+                wsStatusEl.style.color = 'red';
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('test-ws-health').addEventListener('click', function() {
+            logInfo('Testing WebSocket health...');
+            
+            // First check the Django health endpoint
+            fetch('/livechat/websocket-health/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        logSuccess(`Django WebSocket layer is healthy: ${data.message}`);
+                        
+                        // Now try to connect to Daphne directly
+                        logInfo('Testing direct Daphne connection...');
+                        const testSocket = new WebSocket(`ws://${window.location.hostname}:9000/ws/debug/`);
+                        
+                        testSocket.onopen = function() {
+                            logSuccess('Daphne WebSocket server connected successfully!');
+                            testSocket.send(JSON.stringify({
+                                type: 'test',
+                                message: 'Test from debug page'
+                            }));
+                            
+                            setTimeout(() => {
+                                testSocket.close();
+                            }, 1000);
+                        };
+                        
+                        testSocket.onclose = function(e) {
+                            if (e.wasClean) {
+                                logInfo(`Daphne test connection closed cleanly`);
+                            } else {
+                                logError(`Daphne connection failed - is the Daphne server running on port 9000?`);
+                            }
+                        };
+                        
+                        testSocket.onerror = function() {
+                            logError(`Daphne connection error - make sure the server is running with: python run_daphne.py`);
+                        };
+                    } else {
+                        logError(`WebSocket server has issues: ${data.message}`);
+                    }
+                })
+                .catch(error => {
+                    logError(`Error checking WebSocket health: ${error.message}`);
+                });
+        });
+        
+        createRoomButton.addEventListener('click', function() {
+            logInfo('Creating chat room...');
+            
+            fetch('/livechat/api/create-chat-room/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+                .then(response => {
+                    logInfo(`Server response status: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    logInfo(`Server response: ${JSON.stringify(data)}`);
+                    createRoomResponseEl.textContent = JSON.stringify(data);
+                    
+                    if (data.success && data.room_id) {
+                        logSuccess(`Chat room created: ${data.room_id}`);
+                        roomId = data.room_id;
+                        roomIdEl.textContent = roomId;
+                        
+                        // Enable connect button
+                        connectButton.disabled = false;
+                    } else {
+                        logError(`Failed to create chat room: ${data.error || 'Unknown error'}`);
+                    }
+                })
+                .catch(error => {
+                    logError(`Error creating chat room: ${error.message}`);
+                });
+        });
+        
+        connectButton.addEventListener('click', function() {
+            if (roomId) {
+                connectWebSocket(roomId);
+            } else {
+                logError('No room ID available. Create a chat room first.');
+            }
+        });
+        
+        sendButton.addEventListener('click', function() {
+            const message = messageInput.value.trim();
+            
+            if (message && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                logInfo(`Sending message: ${message}`);
+                
+                try {
+                    chatSocket.send(JSON.stringify({
+                        'type': 'chat_message',
+                        'message': message
+                    }));
+                    
+                    // Add message to chat
+                    addMessageToChat('User', message);
+                    
+                    // Clear input
+                    messageInput.value = '';
+                } catch (error) {
+                    logError(`Error sending message: ${error.message}`);
+                }
+            } else {
+                logError('Cannot send message: WebSocket not connected or message empty');
+            }
+        });
+        
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendButton.click();
+            }
+        });
+        
+        document.getElementById('clear-log').addEventListener('click', function() {
+            logContainer.innerHTML = '';
+            logInfo('Log cleared');
+        });
+        
+        sendTestButton.addEventListener('click', function() {
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                logInfo('Sending test message to server');
+                
+                try {
+                    chatSocket.send(JSON.stringify({
+                        'type': 'test_message',
+                        'message': 'This is a test message from debug page',
+                        'timestamp': new Date().toISOString()
+                    }));
+                    logInfo('Test message sent');
+                } catch (error) {
+                    logError(`Error sending test message: ${error.message}`);
+                }
+            } else {
+                logError('Cannot send test message: WebSocket not connected');
+            }
+        });
+        
+        forceReconnectButton.addEventListener('click', function() {
+            logInfo('Forcing reconnection...');
+            
+            if (roomId) {
+                connectWebSocket(roomId);
+            } else {
+                logError('No room ID available. Create a chat room first.');
+            }
+        });
+        
+        // Initialize
+        logInfo('Debug page loaded');
+        logInfo(`User: {{ user.username }} ({{ user.is_authenticated|yesno:"Authenticated,Anonymous" }})`);
+        logInfo(`Server time: {{ timestamp }}`);
+    </script>
+</body>
+</html> 

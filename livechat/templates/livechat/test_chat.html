@@ -1,0 +1,239 @@
+{% extends 'custom_admin/crm/base.html' %}
+{% load static %}
+
+{% block title %}Chat Diagnostics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .debug-container {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        font-family: monospace;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .debug-entry {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        border-left: 4px solid #6c757d;
+    }
+    
+    .debug-entry.info {
+        background-color: #e7f5ff;
+        border-left-color: #0d6efd;
+    }
+    
+    .debug-entry.error {
+        background-color: #fff5f5;
+        border-left-color: #dc3545;
+    }
+    
+    .debug-entry.success {
+        background-color: #ebfbee;
+        border-left-color: #198754;
+    }
+    
+    .debug-entry.warning {
+        background-color: #fff8e6;
+        border-left-color: #ffc107;
+    }
+    
+    .debug-timestamp {
+        color: #6c757d;
+        font-size: 0.8rem;
+        margin-bottom: 5px;
+    }
+    
+    .chat-test-frame {
+        width: 100%;
+        height: 500px;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+    
+    .diagnostic-card {
+        margin-bottom: 20px;
+    }
+    
+    .test-buttons {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Chat Diagnostics</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'crm:crm_dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'livechat:agent_dashboard' %}">Live Chat</a></li>
+        <li class="breadcrumb-item active">Diagnostics</li>
+    </ol>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card diagnostic-card">
+                <div class="card-header">
+                    <i class="fas fa-heartbeat me-1"></i>
+                    WebSocket Diagnostics
+                </div>
+                <div class="card-body">
+                    <div class="test-buttons">
+                        <button id="check-websocket" class="btn btn-primary me-2">
+                            <i class="fas fa-stethoscope me-1"></i> Check WebSocket Server
+                        </button>
+                        <button id="test-chat-conn" class="btn btn-success me-2">
+                            <i class="fas fa-plug me-1"></i> Test Chat Connection
+                        </button>
+                        <button id="clear-log" class="btn btn-outline-secondary">
+                            <i class="fas fa-eraser me-1"></i> Clear Log
+                        </button>
+                    </div>
+                    
+                    <div class="debug-container" id="debug-log">
+                        <div class="debug-entry info">
+                            <div class="debug-timestamp">
+                                <i class="fas fa-clock me-1"></i> {{ now|date:"Y-m-d H:i:s" }}
+                            </div>
+                            <div class="debug-message">
+                                Chat diagnostics page loaded. Use the buttons above to run tests.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-comment-dots me-1"></i>
+                    Test Chat Window
+                </div>
+                <div class="card-body">
+                    <div id="test-chat-container">
+                        <!-- iframe will be loaded here on test -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const debugLog = document.getElementById('debug-log');
+const checkWebsocketBtn = document.getElementById('check-websocket');
+const testChatConnBtn = document.getElementById('test-chat-conn');
+const clearLogBtn = document.getElementById('clear-log');
+const testChatContainer = document.getElementById('test-chat-container');
+
+// Add entry to debug log
+function addDebugEntry(message, type = 'info') {
+    const entry = document.createElement('div');
+    entry.className = `debug-entry ${type}`;
+    
+    const timestamp = document.createElement('div');
+    timestamp.className = 'debug-timestamp';
+    timestamp.innerHTML = `<i class="fas fa-clock me-1"></i> ${new Date().toISOString().replace('T', ' ').substring(0, 19)}`;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'debug-message';
+    messageDiv.innerHTML = message;
+    
+    entry.appendChild(timestamp);
+    entry.appendChild(messageDiv);
+    
+    debugLog.appendChild(entry);
+    debugLog.scrollTop = debugLog.scrollHeight;
+}
+
+// Check WebSocket server health
+checkWebsocketBtn.addEventListener('click', function() {
+    addDebugEntry('Checking WebSocket server health...');
+    
+    fetch('{% url "livechat:websocket_health_check" %}')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            addDebugEntry(`Server health check: ${data.message}`, 'success');
+            addDebugEntry(`Channel layer type: ${data.channel_layer_type}`, 'info');
+        })
+        .catch(error => {
+            addDebugEntry(`Error checking server health: ${error.message}`, 'error');
+        });
+});
+
+// Test WebSocket chat connection
+testChatConnBtn.addEventListener('click', function() {
+    addDebugEntry('Testing direct WebSocket connection...');
+    
+    // Create a test WebSocket connection
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const wsUrl = `${wsProtocol}${window.location.host}/ws/chat/test-connection/`;
+    
+    addDebugEntry(`Connecting to: ${wsUrl}`, 'info');
+    
+    try {
+        const socket = new WebSocket(wsUrl);
+        
+        socket.onopen = function() {
+            addDebugEntry('WebSocket connection established successfully!', 'success');
+            // Close after successful test
+            socket.close(1000, 'Test completed');
+        };
+        
+        socket.onclose = function(event) {
+            if (event.code === 1000) {
+                addDebugEntry('WebSocket closed normally (code 1000)', 'info');
+            } else {
+                addDebugEntry(`WebSocket closed with code: ${event.code}`, 'warning');
+                addDebugEntry(`Reason: ${event.reason || 'No reason provided'}`, 'warning');
+            }
+        };
+        
+        socket.onerror = function(error) {
+            addDebugEntry(`WebSocket error: ${error.message || 'Unknown error'}`, 'error');
+        };
+    } catch (e) {
+        addDebugEntry(`Error creating WebSocket: ${e.message}`, 'error');
+    }
+    
+    // Create an iframe to test embedded chat
+    addDebugEntry('Testing chat iframe loading...', 'info');
+    
+    const iframe = document.createElement('iframe');
+    iframe.className = 'chat-test-frame';
+    iframe.src = '{% url "livechat:embedded_chat" %}';
+    iframe.onload = function() {
+        addDebugEntry('Chat iframe loaded successfully', 'success');
+    };
+    
+    testChatContainer.innerHTML = '';
+    testChatContainer.appendChild(iframe);
+});
+
+// Clear debug log
+clearLogBtn.addEventListener('click', function() {
+    const initialEntry = `
+        <div class="debug-entry info">
+            <div class="debug-timestamp">
+                <i class="fas fa-clock me-1"></i> ${new Date().toISOString().replace('T', ' ').substring(0, 19)}
+            </div>
+            <div class="debug-message">
+                Debug log cleared.
+            </div>
+        </div>
+    `;
+    debugLog.innerHTML = initialEntry;
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,498 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .banner-preview {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-bottom: 0;
+    }
+    .image-preview {
+        max-width: 100%;
+        margin-top: 10px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .help-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    .preview-container {
+        position: relative;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    .preview-container::after {
+        content: "PREVIEW";
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: rgba(0,0,0,0.5);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: bold;
+    }
+    .btn-preview-row {
+        margin-top: 1rem;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+    .btn-preview-row .btn {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4 mb-4">{{ title }}</h1>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-edit me-1"></i>
+                    Banner Information
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="bannerForm">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.title.id_for_label }}" class="form-label">Title *</label>
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                    <div class="text-danger">{{ form.title.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.subtitle.id_for_label }}" class="form-label">Subtitle</label>
+                                {{ form.subtitle }}
+                                {% if form.subtitle.errors %}
+                                    <div class="text-danger">{{ form.subtitle.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.button_text.id_for_label }}" class="form-label">Button Text</label>
+                                {{ form.button_text }}
+                                {% if form.button_text.errors %}
+                                    <div class="text-danger">{{ form.button_text.errors }}</div>
+                                {% endif %}
+                                <div class="help-text">Text displayed on the button (e.g., "Shop Now")</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.link_type.id_for_label }}" class="form-label">Link Type</label>
+                                {{ form.link_type }}
+                                {% if form.link_type.errors %}
+                                    <div class="text-danger">{{ form.link_type.errors }}</div>
+                                {% endif %}
+                                <div class="help-text">Select where the button should link to</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3" id="customUrlSection">
+                            <div class="col-md-12">
+                                <label for="{{ form.button_link.id_for_label }}" class="form-label">Custom URL</label>
+                                {{ form.button_link }}
+                                {% if form.button_link.errors %}
+                                    <div class="text-danger">{{ form.button_link.errors }}</div>
+                                {% endif %}
+                                <div class="help-text">Enter a full URL (only needed for Custom URL type)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.order.id_for_label }}" class="form-label">Display Order</label>
+                                {{ form.order }}
+                                {% if form.order.errors %}
+                                    <div class="text-danger">{{ form.order.errors }}</div>
+                                {% endif %}
+                                <div class="help-text">Lower numbers appear first in the slideshow</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-check mt-4">
+                                    {{ form.active }}
+                                    <label class="form-check-label" for="{{ form.active.id_for_label }}">
+                                        Active Banner
+                                    </label>
+                                    {% if form.active.errors %}
+                                        <div class="text-danger">{{ form.active.errors }}</div>
+                                    {% endif %}
+                                    <div class="help-text">Only active banners will be displayed on the home page</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.start_date.id_for_label }}" class="form-label">Start Date</label>
+                                {{ form.start_date }}
+                                {% if form.start_date.errors %}
+                                    <div class="text-danger">{{ form.start_date.errors }}</div>
+                                {% endif %}
+                                <div class="help-text">When this banner should start showing (leave blank for no restriction)</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.end_date.id_for_label }}" class="form-label">End Date</label>
+                                {{ form.end_date }}
+                                {% if form.end_date.errors %}
+                                    <div class="text-danger">{{ form.end_date.errors }}</div>
+                                {% endif %}
+                                <div class="help-text">When this banner should stop showing (leave blank for no restriction)</div>
+                            </div>
+                        </div>
+                        
+                        <h5 class="mt-4 mb-3">Appearance Customization</h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.text_color.id_for_label }}" class="form-label">Text Color</label>
+                                {{ form.text_color }}
+                                {% if form.text_color.errors %}
+                                    <div class="text-danger">{{ form.text_color.errors }}</div>
+                                {% endif %}
+                                <div class="help-text">Color of the title and subtitle text</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.button_style.id_for_label }}" class="form-label">Button Style</label>
+                                {{ form.button_style }}
+                                {% if form.button_style.errors %}
+                                    <div class="text-danger">{{ form.button_style.errors }}</div>
+                                {% endif %}
+                                <div class="help-text">Style and color of the button</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.caption_position.id_for_label }}" class="form-label">Caption Position</label>
+                                {{ form.caption_position }}
+                                {% if form.caption_position.errors %}
+                                    <div class="text-danger">{{ form.caption_position.errors }}</div>
+                                {% endif %}
+                                <div class="help-text">Horizontal position of the caption</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.overlay_opacity.id_for_label }}" class="form-label">Caption Opacity</label>
+                                {{ form.overlay_opacity }}
+                                {% if form.overlay_opacity.errors %}
+                                    <div class="text-danger">{{ form.overlay_opacity.errors }}</div>
+                                {% endif %}
+                                <div class="help-text">Opacity of the caption background (0-1)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.image.id_for_label }}" class="form-label">Banner Image *</label>
+                            <input type="file" name="image" id="{{ form.image.id_for_label }}" class="form-control" accept="image/*" {% if not banner %}required{% endif %} onchange="previewImage(this)">
+                            {% if form.image.errors %}
+                                <div class="text-danger">{{ form.image.errors }}</div>
+                            {% endif %}
+                            <div class="help-text">Recommended size: 1200x400 pixels. Will be automatically resized if larger.</div>
+                            
+                            <div id="imagePreviewContainer" {% if not banner.image %}style="display: none;"{% endif %}>
+                                <img id="imagePreview" src="{% if banner.image %}{{ banner.image.url }}{% endif %}" class="image-preview">
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'admin_dashboard:admin_banners' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Back to Banners
+                            </a>
+                            <div>
+                                <a href="{% url 'home' %}?refresh={{ now.timestamp }}&rand={{ now.microsecond }}" target="_blank" class="btn btn-outline-primary me-2" id="previewBtn">
+                                    <i class="fas fa-eye me-1"></i>Preview on Homepage
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>{{ button_text }}
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> After saving, your banner changes will be immediately visible to new visitors. If you need to see changes immediately, please use the "Preview on Homepage" button or refresh your browser cache.
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Banner Preview
+                </div>
+                <div class="card-body">
+                    <div id="bannerPreviewContainer" class="text-center position-relative preview-container">
+                        {% if banner and banner.image %}
+                            <img id="bannerImagePreview" src="{{ banner.image.url }}" alt="{{ banner.title }}" class="banner-preview">
+                            <div id="captionPreview" class="position-absolute bottom-0 start-0 end-0 p-3 {{ banner.text_color|default:'text-white' }}" 
+                                 style="background: rgba(0,0,0,{{ banner.overlay_opacity|default:'0.4' }}); text-align: {{ banner.caption_position|default:'center' }};">
+                                <h5 id="titlePreview">{{ banner.title }}</h5>
+                                <p id="subtitlePreview" class="small">{{ banner.subtitle }}</p>
+                                <button id="buttonPreview" class="btn {{ banner.button_style|default:'btn-primary' }} btn-sm">{{ banner.button_text|default:'Shop Now' }}</button>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info mb-3">
+                                Upload an image to see a preview
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="btn-preview-row">
+                        <button type="button" class="btn btn-outline-secondary" onclick="refreshPreview()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh Preview
+                        </button>
+                        <a href="{% url 'home' %}?refresh={{ now.timestamp }}" target="_blank" class="btn btn-outline-primary">
+                            <i class="fas fa-external-link-alt me-1"></i>View Live
+                        </a>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h5>How banners appear on the site:</h5>
+                        <ul>
+                            <li>Banners are displayed in a slideshow on the home page</li>
+                            <li>Order determines the sequence of banners</li>
+                            <li>Only active banners within date ranges are displayed</li>
+                            <li>Images are automatically resized to fit properly</li>
+                            <li>Customize text color, button style, and caption position</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function previewImage(input) {
+        const container = document.getElementById('imagePreviewContainer');
+        const preview = document.getElementById('imagePreview');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                container.style.display = 'block';
+                
+                // Also update banner preview
+                const bannerPreview = document.getElementById('bannerImagePreview');
+                if (bannerPreview) {
+                    bannerPreview.src = e.target.result;
+                    document.getElementById('bannerPreviewContainer').classList.remove('alert', 'alert-info');
+                }
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            container.style.display = 'none';
+        }
+    }
+    
+    function refreshPreview() {
+        // Get current form values and update the preview
+        const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+        const subtitleInput = document.getElementById('{{ form.subtitle.id_for_label }}');
+        const buttonTextInput = document.getElementById('{{ form.button_text.id_for_label }}');
+        const textColorSelect = document.getElementById('{{ form.text_color.id_for_label }}');
+        const buttonStyleSelect = document.getElementById('{{ form.button_style.id_for_label }}');
+        const captionPositionSelect = document.getElementById('{{ form.caption_position.id_for_label }}');
+        const opacityInput = document.getElementById('{{ form.overlay_opacity.id_for_label }}');
+        
+        // Get preview elements
+        const titlePreview = document.getElementById('titlePreview');
+        const subtitlePreview = document.getElementById('subtitlePreview');
+        const buttonPreview = document.getElementById('buttonPreview');
+        const captionPreview = document.getElementById('captionPreview');
+        
+        if (!titlePreview) return;
+        
+        // Update the preview
+        if (titleInput && titlePreview) titlePreview.textContent = titleInput.value;
+        if (subtitleInput && subtitlePreview) subtitlePreview.textContent = subtitleInput.value;
+        if (buttonTextInput && buttonPreview) buttonPreview.textContent = buttonTextInput.value || 'Shop Now';
+        
+        if (textColorSelect && captionPreview) {
+            captionPreview.classList.remove('text-white', 'text-dark', 'text-primary', 'text-success', 'text-danger', 'text-warning');
+            captionPreview.classList.add(textColorSelect.value || 'text-white');
+        }
+        
+        if (buttonStyleSelect && buttonPreview) {
+            buttonPreview.className = 'btn btn-sm';
+            buttonPreview.classList.add(buttonStyleSelect.value || 'btn-primary');
+        }
+        
+        if (captionPositionSelect && captionPreview) {
+            captionPreview.style.textAlign = captionPositionSelect.value || 'center';
+        }
+        
+        if (opacityInput && captionPreview) {
+            captionPreview.style.background = `rgba(0,0,0,${opacityInput.value || '0.4'})`;
+        }
+    }
+    
+    // Handle custom URL section visibility
+    document.addEventListener('DOMContentLoaded', function() {
+        const linkTypeSelect = document.getElementById('{{ form.link_type.id_for_label }}');
+        const customUrlSection = document.getElementById('customUrlSection');
+        
+        function toggleCustomUrlSection() {
+            if (linkTypeSelect.value === 'custom') {
+                customUrlSection.style.display = 'block';
+            } else {
+                customUrlSection.style.display = 'none';
+            }
+        }
+        
+        // Initial check
+        toggleCustomUrlSection();
+        
+        // Add event listener for changes
+        linkTypeSelect.addEventListener('change', toggleCustomUrlSection);
+        
+        // Setup banner preview dynamic updates
+        setupBannerPreviewUpdates();
+    });
+    
+    function setupBannerPreviewUpdates() {
+        // Get form elements
+        const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+        const subtitleInput = document.getElementById('{{ form.subtitle.id_for_label }}');
+        const buttonTextInput = document.getElementById('{{ form.button_text.id_for_label }}');
+        const textColorSelect = document.getElementById('{{ form.text_color.id_for_label }}');
+        const buttonStyleSelect = document.getElementById('{{ form.button_style.id_for_label }}');
+        const captionPositionSelect = document.getElementById('{{ form.caption_position.id_for_label }}');
+        const opacityInput = document.getElementById('{{ form.overlay_opacity.id_for_label }}');
+        
+        // Get preview elements
+        const titlePreview = document.getElementById('titlePreview');
+        const subtitlePreview = document.getElementById('subtitlePreview');
+        const buttonPreview = document.getElementById('buttonPreview');
+        const captionPreview = document.getElementById('captionPreview');
+        
+        if (!titlePreview) return; // If preview elements don't exist, exit
+        
+        // Update text functions
+        if (titleInput) {
+            titleInput.addEventListener('input', function() {
+                titlePreview.textContent = this.value;
+            });
+        }
+        
+        if (subtitleInput) {
+            subtitleInput.addEventListener('input', function() {
+                subtitlePreview.textContent = this.value;
+            });
+        }
+        
+        if (buttonTextInput) {
+            buttonTextInput.addEventListener('input', function() {
+                buttonPreview.textContent = this.value;
+            });
+        }
+        
+        // Update styles
+        if (textColorSelect) {
+            textColorSelect.addEventListener('change', function() {
+                // Remove all text color classes
+                captionPreview.classList.remove('text-white', 'text-dark', 'text-primary', 'text-success', 'text-danger', 'text-warning');
+                // Add the selected class
+                captionPreview.classList.add(this.value);
+            });
+        }
+        
+        if (buttonStyleSelect) {
+            buttonStyleSelect.addEventListener('change', function() {
+                // Remove all btn classes except 'btn' and 'btn-sm'
+                buttonPreview.className = 'btn btn-sm';
+                // Add the selected button style
+                buttonPreview.classList.add(this.value);
+            });
+        }
+        
+        if (captionPositionSelect) {
+            captionPositionSelect.addEventListener('change', function() {
+                captionPreview.style.textAlign = this.value;
+            });
+        }
+        
+        if (opacityInput) {
+            opacityInput.addEventListener('input', function() {
+                captionPreview.style.background = `rgba(0,0,0,${this.value})`;
+            });
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle image preview
+        function previewImage(input) {
+            var container = document.getElementById('imagePreviewContainer');
+            var preview = document.getElementById('imagePreview');
+            
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    container.style.display = 'block';
+                }
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        // Attach the previewImage function to the file input
+        var imageInput = document.getElementById('{{ form.image.id_for_label }}');
+        if (imageInput) {
+            imageInput.addEventListener('change', function() {
+                previewImage(this);
+            });
+        }
+        
+        // Handle the preview button
+        var previewBtn = document.getElementById('previewBtn');
+        if (previewBtn) {
+            previewBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Create a new URL with current timestamp and random number
+                var baseUrl = "{% url 'home' %}";
+                var timestamp = new Date().getTime();
+                var random = Math.floor(Math.random() * 1000000);
+                var url = baseUrl + "?refresh=" + timestamp + "&rand=" + random;
+                
+                // Open in a new tab
+                window.open(url, '_blank');
+            });
+        }
+    });
+</script>
+{% endblock %} 

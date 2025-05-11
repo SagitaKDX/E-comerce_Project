@@ -1,0 +1,610 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ package.name }} - E-Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .package-details {
+        margin-bottom: 3rem;
+    }
+    .package-image {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .package-image img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+    }
+    .package-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: #212529;
+    }
+    .package-meta {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .package-meta .separator {
+        width: 4px;
+        height: 4px;
+        background-color: #6c757d;
+        border-radius: 50%;
+        margin: 0 0.5rem;
+    }
+    .package-price {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #007bff;
+        margin-bottom: 1rem;
+    }
+    .original-price {
+        text-decoration: line-through;
+        color: #6c757d;
+        font-size: 1rem;
+        margin-left: 0.5rem;
+    }
+    .discount-badge {
+        background-color: #dc3545;
+        color: white;
+        border-radius: 20px;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.8rem;
+        margin-left: 0.5rem;
+        vertical-align: middle;
+    }
+    .package-description {
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+        color: #495057;
+    }
+    .min-purchase {
+        padding: 0.75rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        color: #495057;
+        border-left: 3px solid #007bff;
+    }
+    .action-buttons {
+        margin-bottom: 2rem;
+    }
+    .btn-customize {
+        padding: 0.5rem 1.5rem;
+        font-weight: 600;
+    }
+    .btn-add-to-cart {
+        padding: 0.5rem 1.5rem;
+        font-weight: 600;
+    }
+    .section-title {
+        position: relative;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #212529;
+        padding-bottom: 0.5rem;
+    }
+    .section-title:after {
+        content: '';
+        position: absolute;
+        width: 50px;
+        height: 3px;
+        background-color: #007bff;
+        bottom: 0;
+        left: 0;
+    }
+    .product-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+    .product-img {
+        height: 160px;
+        object-fit: cover;
+    }
+    .product-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    .product-price {
+        color: #007bff;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    .required-badge {
+        background-color: #28a745;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        margin-left: 0.5rem;
+    }
+    .optional-badge {
+        background-color: #6c757d;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        margin-left: 0.5rem;
+    }
+    .qty-badge {
+        background-color: #007bff;
+        color: white;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+    .rating-stars {
+        color: #ffc107;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+    }
+    .reviews-container {
+        margin-top: 2rem;
+    }
+    .review-card {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin-bottom: 1rem;
+        position: relative;
+    }
+    .review-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    .reviewer-name {
+        font-weight: 600;
+        margin-right: 1rem;
+    }
+    .review-date {
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+    .review-stars {
+        color: #ffc107;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    .review-content {
+        color: #495057;
+        line-height: 1.6;
+    }
+    .verified-badge {
+        color: #28a745;
+        font-size: 0.8rem;
+        margin-left: 0.5rem;
+    }
+    .related-packages {
+        margin-top: 3rem;
+    }
+    .product-meta-info {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    /* Mobile Responsive Enhancements */
+    @media (max-width: 767px) {
+        .package-title {
+            font-size: 1.5rem;
+        }
+        
+        .package-meta {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .package-meta .separator {
+            display: none;
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        
+        .btn-customize, .btn-add-to-cart {
+            width: 100%;
+        }
+        
+        .breadcrumb {
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        
+        .package-image {
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+        }
+        
+        /* Mobile product grid */
+        .row-cols-1 {
+            margin: 0 -8px;
+        }
+        
+        .row-cols-1 > .col {
+            padding: 0 8px;
+        }
+        
+        .product-card {
+            margin-bottom: 16px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        .product-img {
+            height: 140px;
+        }
+        
+        .card-body {
+            padding: 12px !important;
+        }
+        
+        .review-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .reviewer-name {
+            margin-bottom: 4px;
+        }
+        
+        .verified-badge {
+            margin-left: 0;
+            margin-top: 4px;
+            display: block;
+        }
+        
+        /* Sticky add to cart for mobile */
+        .mobile-sticky-buttons {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 12px 15px;
+            box-shadow: 0 -3px 10px rgba(0,0,0,0.1);
+            z-index: 999;
+            display: flex;
+            gap: 10px;
+        }
+        
+        body {
+            padding-bottom: 70px; /* Space for sticky buttons */
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'package_list' %}">Packages</a></li>
+            {% if package.category %}
+            <li class="breadcrumb-item"><a href="{% url 'package_list' %}?category={{ package.category.slug }}">{{ package.category.name }}</a></li>
+            {% endif %}
+            <li class="breadcrumb-item active" aria-current="page">{{ package.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="package-details">
+        <div class="row">
+            <!-- Package Image -->
+            <div class="col-md-5 mb-4 mb-md-0">
+                <div class="package-image">
+                    {% if package.image %}
+                    <img src="{{ package.image.url }}" alt="{{ package.name }}">
+                    {% else %}
+                    <img src="https://via.placeholder.com/600x400?text=No+Image" alt="{{ package.name }}">
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Package Info -->
+            <div class="col-md-7">
+                <h1 class="package-title">{{ package.name }}</h1>
+                
+                <div class="package-meta">
+                    <span>Category: {{ package.category.name }}</span>
+                    <span class="separator"></span>
+                    <div class="rating-stars">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= package.average_rating %}
+                                <i class="fas fa-star"></i>
+                            {% elif forloop.counter <= package.average_rating|add:0.5 %}
+                                <i class="fas fa-star-half-alt"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                        <span class="ms-1">({{ package.ratings.count }} ratings)</span>
+                    </div>
+                    <span class="separator"></span>
+                    <span>{{ package.sold_count }} sold</span>
+                </div>
+                
+                <div class="package-price">
+                    ${{ package.discounted_price }}
+                    {% if package.original_price > package.discounted_price %}
+                    <span class="original-price">${{ package.original_price }}</span>
+                    <span class="discount-badge">-{{ package.discount_percent }}%</span>
+                    {% endif %}
+                </div>
+                
+                <div class="min-purchase">
+                    <i class="fas fa-info-circle me-2"></i> Minimum purchase amount: ${{ package.minimum_purchase_amount }}
+                    <p class="mb-0 mt-1 small">You must select products with a total value of at least ${{ package.minimum_purchase_amount }} to purchase this package.</p>
+                </div>
+                
+                <div class="package-description">
+                    {{ package.description|linebreaks }}
+                </div>
+                
+                <div class="action-buttons">
+                    <a href="{% url 'customize_package' package.slug %}" class="btn btn-primary btn-lg btn-customize me-2">
+                        <i class="fas fa-sliders-h me-2"></i> Customize Package
+                    </a>
+                    
+                    <!-- Check if any product is out of stock -->
+                    {% if package.is_available %}
+                    <form method="post" action="{% url 'add_package_to_cart' package.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-primary btn-lg btn-add-to-cart">
+                            <i class="fas fa-cart-plus me-2"></i> Add to Cart
+                        </button>
+                    </form>
+                    {% else %}
+                    <button type="button" class="btn btn-outline-secondary btn-lg btn-add-to-cart" disabled>
+                        <i class="fas fa-cart-plus me-2"></i> Add to Cart
+                    </button>
+                    <div class="alert alert-danger mt-2">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Some items in this package are currently out of stock.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Package Products -->
+    <div class="package-products mt-5">
+        <h2 class="section-title">Products in this Package</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            {% for product_item in package.packageproduct_set.all %}
+            <div class="col">
+                <div class="card product-card h-100">
+                    {% if product_item.product.image %}
+                    <img src="{{ product_item.product.image.url }}" class="card-img-top product-img" alt="{{ product_item.product.name }}">
+                    {% else %}
+                    <img src="https://via.placeholder.com/300x160?text=No+Image" class="card-img-top product-img" alt="{{ product_item.product.name }}">
+                    {% endif %}
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h5 class="product-title">{{ product_item.product.name }}</h5>
+                            <span class="qty-badge">x{{ product_item.quantity }}</span>
+                        </div>
+                        {% if product_item.is_required %}
+                        <span class="required-badge">Required</span>
+                        {% else %}
+                        <span class="optional-badge">Optional</span>
+                        {% endif %}
+                        <p class="product-price mt-2">${{ product_item.product.price }}</p>
+                        <div class="product-meta-info">
+                            <span>{{ product_item.product.category.name }}</span>
+                            <a href="{% url 'product_detail' product_item.product.slug %}" class="text-primary">View details</a>
+                        </div>
+                        
+                        {% if product_item.product.stock < product_item.quantity %}
+                        <div class="mt-2">
+                            <span class="badge bg-danger">Out of Stock</span>
+                            <small class="text-danger d-block mt-1">Required: {{ product_item.quantity }}, Available: {{ product_item.product.stock }}</small>
+                        </div>
+                        {% else %}
+                        <div class="mt-2">
+                            <span class="badge bg-success">In Stock</span>
+                            <small class="text-muted d-block mt-1">Available: {{ product_item.product.stock }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> This package does not contain any products yet.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Mobile Sticky Action Buttons - Only visible on small screens -->
+    <div class="mobile-sticky-buttons d-md-none">
+        <a href="{% url 'customize_package' package.slug %}" class="btn btn-primary btn-customize flex-grow-1">
+            <i class="fas fa-sliders-h me-2"></i> Customize
+        </a>
+        
+        {% if package.is_available %}
+        <form method="post" action="{% url 'add_package_to_cart' package.id %}" class="flex-grow-1">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-primary btn-add-to-cart w-100">
+                <i class="fas fa-cart-plus me-2"></i> Add to Cart
+            </button>
+        </form>
+        {% else %}
+        <button type="button" class="btn btn-outline-secondary btn-add-to-cart flex-grow-1" disabled>
+            <i class="fas fa-cart-plus me-2"></i> Out of Stock
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Reviews Section -->
+    {% if package.ratings.count > 0 %}
+    <div class="reviews-container mt-5">
+        <h2 class="section-title">Customer Reviews</h2>
+        
+        <div class="mb-4">
+            <div class="d-flex align-items-center mb-2">
+                <div class="rating-stars me-3">
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= package.average_rating %}
+                            <i class="fas fa-star"></i>
+                        {% elif forloop.counter <= package.average_rating|add:0.5 %}
+                            <i class="fas fa-star-half-alt"></i>
+                        {% else %}
+                            <i class="far fa-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <span class="h5 mb-0">{{ package.average_rating|floatformat:1 }} out of 5</span>
+            </div>
+            <p>{{ package.ratings.count }} customer ratings</p>
+        </div>
+        
+        <div class="reviews-list">
+            {% for review in package.ratings.all|slice:":5" %}
+            <div class="card review-card">
+                <div class="card-body">
+                    <div class="review-header">
+                        <span class="reviewer-name">{{ review.user.get_full_name|default:review.user.username }}</span>
+                        <span class="review-date">{{ review.created_at|date:"F d, Y" }}</span>
+                        {% if review.is_verified_purchase %}
+                        <span class="verified-badge"><i class="fas fa-check-circle"></i> Verified Purchase</span>
+                        {% endif %}
+                    </div>
+                    <div class="review-stars">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= review.rating %}
+                                <i class="fas fa-star"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="review-content">
+                        {{ review.comment|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if package.ratings.count > 5 %}
+        <div class="text-center mt-4">
+            <button class="btn btn-outline-primary" id="load-more-reviews">
+                Load More Reviews <i class="fas fa-chevron-down ms-1"></i>
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Related Packages -->
+    {% if related_packages %}
+    <div class="related-packages">
+        <h2 class="section-title">Related Packages</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            {% for rel_package in related_packages %}
+            <div class="col">
+                <div class="card product-card h-100">
+                    {% if rel_package.image %}
+                    <img src="{{ rel_package.image.url }}" class="card-img-top product-img" alt="{{ rel_package.name }}">
+                    {% else %}
+                    <img src="https://via.placeholder.com/300x160?text=No+Image" class="card-img-top product-img" alt="{{ rel_package.name }}">
+                    {% endif %}
+                    <div class="card-body p-3">
+                        <h5 class="product-title">{{ rel_package.name }}</h5>
+                        <div class="rating-stars">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= rel_package.average_rating %}
+                                    <i class="fas fa-star"></i>
+                                {% elif forloop.counter <= rel_package.average_rating|add:0.5 %}
+                                    <i class="fas fa-star-half-alt"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <span class="ms-1 small">({{ rel_package.ratings.count }})</span>
+                        </div>
+                        <p class="product-price">
+                            ${{ rel_package.discounted_price }}
+                            {% if rel_package.original_price > rel_package.discounted_price %}
+                            <span class="original-price">${{ rel_package.original_price }}</span>
+                            {% endif %}
+                        </p>
+                        <div class="d-flex justify-content-between mt-3">
+                            <a href="{% url 'package_detail' rel_package.slug %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                            <a href="{% url 'customize_package' rel_package.slug %}" class="btn btn-sm btn-primary">Customize</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load more reviews functionality
+        const loadMoreBtn = document.getElementById('load-more-reviews');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', function() {
+                // This would typically be an AJAX call to load more reviews
+                // For demo purposes, we'll just hide the button
+                this.style.display = 'none';
+                
+                // You would then append the new reviews to the reviews-list container
+                const reviewsList = document.querySelector('.reviews-list');
+                
+                // Example of how you might show a loading indicator
+                const loadingIndicator = document.createElement('div');
+                loadingIndicator.className = 'text-center my-3';
+                loadingIndicator.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+                reviewsList.appendChild(loadingIndicator);
+                
+                // After loading (simulate delay)
+                setTimeout(() => {
+                    loadingIndicator.remove();
+                    
+                    // Here you would normally add the new reviews from the AJAX response
+                    const noMoreReviews = document.createElement('div');
+                    noMoreReviews.className = 'alert alert-info mt-3';
+                    noMoreReviews.innerHTML = '<i class="fas fa-info-circle me-2"></i> No more reviews to load.';
+                    reviewsList.appendChild(noMoreReviews);
+                }, 1000);
+            });
+        }
+    });
+</script>
+{% endblock %} 

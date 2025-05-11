@@ -1,0 +1,179 @@
+<!-- custom_admin/templates/custom_admin/users/form.html -->
+{% extends 'custom_admin/base.html' %}
+
+{% block title %}{{ title }} - E-Shop Admin{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'admin_dashboard:admin_users' %}" class="btn btn-sm btn-secondary">
+    <i class="fas fa-arrow-left me-1"></i> Back to Users
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.username.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.email.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.first_name.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.last_name.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ form.role.id_for_label }}" class="form-label">User Role</label>
+                {{ form.role }}
+                {% if form.role.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.role.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="form-text">
+                    Select the appropriate role for this user:
+                    <ul class="mt-2">
+                        <li><strong>Customer</strong>: Regular user with basic shopping privileges</li>
+                        <li><strong>CRM User</strong>: Can access CRM dashboard but not handle customer service</li>
+                        <li><strong>CSR</strong>: Full customer service representative with support capabilities</li>
+                        <li><strong>Staff</strong>: General staff member with admin access</li>
+                        <li><strong>Admin</strong>: Full administrative privileges</li>
+                    </ul>
+                </div>
+            </div>
+            
+            {% if is_add %}
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="{{ form.password1.id_for_label }}" class="form-label">Password</label>
+                    {{ form.password1 }}
+                    {% if form.password1.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.password1.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password</label>
+                    {{ form.password2 }}
+                    {% if form.password2.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.password2.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="mb-3 form-check">
+                {{ form.is_staff }}
+                <label class="form-check-label" for="{{ form.is_staff.id_for_label }}">
+                    Staff Status (can access admin)
+                </label>
+                {% if form.is_staff.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.is_staff.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            {% if not is_add %}
+            <div class="mb-3 form-check">
+                {{ form.is_active }}
+                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                    Active (inactive users cannot login)
+                </label>
+                {% if form.is_active.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.is_active.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    {% if is_add %}
+                        <i class="fas fa-plus me-1"></i> Add User
+                    {% else %}
+                        <i class="fas fa-save me-1"></i> Update User
+                    {% endif %}
+                </button>
+                <a href="{% url 'admin_dashboard:admin_users' %}" class="btn btn-secondary ms-2">Cancel</a>
+                
+                {% if not is_add %}
+                <hr class="my-4">
+                <h5>Password Management</h5>
+                <p>Use the button below to reset this user's password:</p>
+                <a href="{% url 'admin_dashboard:admin_user_password_reset' user_obj.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-key me-1"></i> Reset Password
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

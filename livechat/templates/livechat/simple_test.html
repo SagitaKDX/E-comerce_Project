@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple WebSocket Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #log { 
+            height: 300px; 
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #f5f5f5;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Basic WebSocket Test</h1>
+    <button id="connect-btn">Connect to Debug WebSocket</button>
+    <button id="clear-btn">Clear Log</button>
+    <h3>Connection Log</h3>
+    <div id="log"></div>
+
+    <script>
+        const logElement = document.getElementById('log');
+        const connectBtn = document.getElementById('connect-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            logElement.appendChild(entry);
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function clearLog() {
+            logElement.innerHTML = '';
+            log('Log cleared');
+        }
+        
+        function testConnection() {
+            log('Testing debug WebSocket connection...');
+            
+            // Create WebSocket URL - test different formats
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            
+            // Try different URL formats
+            const urls = [
+                `${wsProtocol}${window.location.hostname}:9000/ws/debug/`,
+                `${wsProtocol}${window.location.hostname}:9000/ws/debug`,
+                `ws://127.0.0.1:9000/ws/debug/`,
+                `ws://localhost:9000/ws/debug/`
+            ];
+            
+            const selectedUrl = urls[0]; // Use the first format by default
+            log(`Trying WebSocket URL: ${selectedUrl}`);
+            
+            try {
+                // Create WebSocket connection
+                const socket = new WebSocket(selectedUrl);
+                
+                socket.onopen = function(e) {
+                    log('WebSocket connection established successfully!', 'success');
+                    connectBtn.textContent = 'Connected';
+                    connectBtn.disabled = true;
+                    
+                    // Send a test message
+                    log('Sending test message...');
+                    socket.send(JSON.stringify({
+                        type: 'test',
+                        message: 'Hello, WebSocket!',
+                        timestamp: new Date().toISOString()
+                    }));
+                };
+                
+                socket.onmessage = function(e) {
+                    log(`Message received: ${e.data}`, 'success');
+                    try {
+                        const data = JSON.parse(e.data);
+                        log(`Message type: ${data.type}`, 'info');
+                    } catch (error) {
+                        log(`Error parsing message: ${error.message}`, 'error');
+                    }
+                };
+                
+                socket.onclose = function(e) {
+                    if (e.wasClean) {
+                        log(`Connection closed cleanly, code=${e.code}, reason=${e.reason}`, 'info');
+                    } else {
+                        log('Connection died', 'error');
+                    }
+                    connectBtn.textContent = 'Connect to Debug WebSocket';
+                    connectBtn.disabled = false;
+                };
+                
+                socket.onerror = function(error) {
+                    log(`WebSocket Error: ${error.message || 'Unknown error'}`, 'error');
+                    connectBtn.textContent = 'Connect to Debug WebSocket';
+                    connectBtn.disabled = false;
+                };
+            } catch (e) {
+                log(`Error creating WebSocket: ${e.message}`, 'error');
+                connectBtn.textContent = 'Connect to Debug WebSocket';
+                connectBtn.disabled = false;
+            }
+        }
+        
+        connectBtn.addEventListener('click', testConnection);
+        clearBtn.addEventListener('click', clearLog);
+        
+        log('Page loaded. Click the button to test the WebSocket connection.');
+    </script>
+</body>
+</html> 

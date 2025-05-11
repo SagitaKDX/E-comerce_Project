@@ -1,0 +1,50 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}Delete FAQ{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Delete FAQ</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:faq_list' %}">FAQs</a></li>
+        <li class="breadcrumb-item active">Delete</li>
+    </ol>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-trash me-1"></i>
+            Confirm Deletion
+        </div>
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <h5 class="alert-heading">Warning!</h5>
+                <p>Are you sure you want to delete the following FAQ?</p>
+                <p class="mb-0"><strong>{{ faq.title }}</strong></p>
+            </div>
+            
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    FAQ Content Preview
+                </div>
+                <div class="card-body">
+                    <h5>{{ faq.title }}</h5>
+                    <p class="text-muted small">Created: {{ faq.created_at|date:"M d, Y" }} | Updated: {{ faq.updated_at|date:"M d, Y" }}</p>
+                    <div class="border-top pt-3 mt-3">
+                        <p class="text-truncate">{{ faq.content|truncatewords:50 }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                    <a href="{% url 'admin_dashboard:faq_list' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

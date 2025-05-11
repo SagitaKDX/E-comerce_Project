@@ -1,0 +1,18 @@
+<li class="list-group-item d-flex justify-content-between">
+    <span>Subtotal</span>
+    <span>${{ cart.get_subtotal|floatformat:2 }}</span>
+</li>
+<li class="list-group-item d-flex justify-content-between">
+    <span>Shipping</span>
+    <span>${% filter floatformat:2 %}10.00{% endfilter %}</span> <!-- Assuming fixed shipping -->
+</li>
+{% if cart.active_voucher %}
+<li class="list-group-item d-flex justify-content-between text-success">
+    <span>Voucher Discount ({{ cart.active_voucher.voucher.code }})</span>
+    <span>-${{ cart.get_voucher_discount|floatformat:2 }}</span>
+</li>
+{% endif %}
+<li class="list-group-item d-flex justify-content-between">
+    <strong>Total</strong>
+    <strong>${{ cart.total_price|floatformat:2 }}</strong>
+</li> 

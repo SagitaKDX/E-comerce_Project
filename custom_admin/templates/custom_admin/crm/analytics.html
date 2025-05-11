@@ -1,0 +1,205 @@
+{% extends 'custom_admin/crm/base.html' %}
+
+{% block title %}CRM Analytics{% endblock %}
+
+{% block page_title %}CRM Analytics{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'crm:crm_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Analytics Overview -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2 stats-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Comments (30 days)</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_comments_30d }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-comments fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2 stats-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Resolved Comments (30 days)</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ resolved_comments_30d }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2 stats-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Resolution Rate</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ resolution_rate|floatformat:1 }}%
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2 stats-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Avg. Resolution Time</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ avg_resolution_time|floatformat:1 }} hours
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row">
+    <!-- Comments by Status -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Comments by Status</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height:300px;">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comments Over Time -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Comments Over Time (30 Days)</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height:300px;">
+                    <canvas id="timeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Data from Django context (safer approach to avoid linter errors)
+        const statusLabels = [{% for status in status_counts %}"{{ status.status|title }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+        const statusCounts = [{% for status in status_counts %}{{ status.count }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+        
+        const timeLabels = [{% for item in daily_counts %}"{{ item.date|date:"M d" }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+        const timeCounts = [{% for item in daily_counts %}{{ item.count }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+        
+        // Status Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        const statusData = {
+            labels: statusLabels,
+            datasets: [{
+                data: statusCounts,
+                backgroundColor: [
+                    'rgba(78, 115, 223, 0.8)',
+                    'rgba(246, 194, 62, 0.8)',
+                    'rgba(28, 200, 138, 0.8)',
+                    'rgba(108, 117, 125, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(78, 115, 223, 1)',
+                    'rgba(246, 194, 62, 1)',
+                    'rgba(28, 200, 138, 1)',
+                    'rgba(108, 117, 125, 1)'
+                ],
+                borderWidth: 1
+            }]
+        };
+        
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: statusData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+        
+        // Time Chart
+        const timeCtx = document.getElementById('timeChart').getContext('2d');
+        const timeData = {
+            labels: timeLabels,
+            datasets: [{
+                label: 'Comments',
+                data: timeCounts,
+                backgroundColor: 'rgba(78, 115, 223, 0.2)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: '#fff',
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 2,
+                tension: 0.3
+            }]
+        };
+        
+        new Chart(timeCtx, {
+            type: 'line',
+            data: timeData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 

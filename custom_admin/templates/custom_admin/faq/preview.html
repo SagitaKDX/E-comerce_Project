@@ -1,0 +1,95 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}Preview FAQ - {{ faq.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css">
+<style>
+    .markdown-body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .status-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Preview FAQ</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:faq_list' %}">FAQs</a></li>
+        <li class="breadcrumb-item active">Preview</li>
+    </ol>
+    
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-eye me-1"></i>
+                FAQ Preview
+            </div>
+            <div class="btn-group" role="group">
+                <a href="{% url 'admin_dashboard:faq_edit' faq.pk %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-edit me-1"></i> Edit
+                </a>
+                <a href="{% url 'admin_dashboard:faq_list' %}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back to List
+                </a>
+            </div>
+        </div>
+        <div class="card-body position-relative">
+            {% if faq.is_published %}
+                <span class="badge bg-success status-badge">Published</span>
+            {% else %}
+                <span class="badge bg-secondary status-badge">Draft</span>
+            {% endif %}
+            
+            <div class="mb-3">
+                <h3>{{ faq.title }}</h3>
+                <p class="text-muted small">
+                    <strong>Order:</strong> {{ faq.order }} | 
+                    <strong>Created:</strong> {{ faq.created_at|date:"M d, Y" }} | 
+                    <strong>Updated:</strong> {{ faq.updated_at|date:"M d, Y" }}
+                </p>
+            </div>
+            
+            <div class="border-top pt-4">
+                <h5>Content Preview:</h5>
+                <div class="markdown-body mt-3" id="markdown-preview">
+                    Loading content...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup marked.js with safe options
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            headerIds: true,
+            sanitize: false // XSS is handled by DOMPurify
+        });
+        
+        // Get the raw markdown content
+        const rawContent = `{{ faq.content|escapejs }}`;
+        
+        // Render the markdown
+        const previewElement = document.getElementById('markdown-preview');
+        previewElement.innerHTML = marked.parse(rawContent);
+    });
+</script>
+{% endblock %}

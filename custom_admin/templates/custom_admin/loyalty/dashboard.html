@@ -1,0 +1,248 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{{ page_title }}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Loyalty Program</li>
+    </ol>
+    
+    <!-- KPI Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Total Customers in Program</div>
+                            <div class="text-lg fw-bold">{{ users_with_tier }}</div>
+                        </div>
+                        <i class="fas fa-users fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'admin_dashboard:loyalty_customers_list' %}">View Details</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Participation Rate</div>
+                            <div class="text-lg fw-bold">{{ participation_rate }}%</div>
+                        </div>
+                        <i class="fas fa-chart-pie fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <span class="small text-white">Total Customers: {{ total_users }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Total Vouchers Issued</div>
+                            <div class="text-lg fw-bold">{{ total_vouchers }}</div>
+                        </div>
+                        <i class="fas fa-ticket-alt fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'admin_dashboard:loyalty_vouchers_list' %}">View All Vouchers</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Voucher Usage Rate</div>
+                            <div class="text-lg fw-bold">{{ voucher_usage_rate }}%</div>
+                        </div>
+                        <i class="fas fa-percent fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <span class="small text-white">Used: {{ used_vouchers }} / {{ total_vouchers }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'admin_dashboard:loyalty_tiers_list' %}" class="btn btn-primary">
+                            <i class="fas fa-layer-group me-1"></i> Manage Tiers
+                        </a>
+                        <a href="{% url 'admin_dashboard:loyalty_customers_list' %}" class="btn btn-success">
+                            <i class="fas fa-users me-1"></i> View Customers
+                        </a>
+                        <a href="{% url 'admin_dashboard:loyalty_vouchers_list' %}" class="btn btn-warning text-white">
+                            <i class="fas fa-ticket-alt me-1"></i> Manage Vouchers
+                        </a>
+                        <a href="{% url 'admin_dashboard:loyalty_settings' %}" class="btn btn-info text-white">
+                            <i class="fas fa-cogs me-1"></i> Program Settings
+                        </a>
+                        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#recalculateModal">
+                            <i class="fas fa-sync me-1"></i> Recalculate Tiers
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Tiers List -->
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-layer-group me-1"></i>
+                    Loyalty Tiers
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tier Name</th>
+                                    <th>Minimum Spend</th>
+                                    <th>Discount</th>
+                                    <th>Members</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tier in loyalty_tiers %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-{{ tier.color_class|default:'secondary' }} me-1">&nbsp;</span>
+                                            {{ tier.name }}
+                                        </td>
+                                        <td>${{ tier.minimum_spend }}</td>
+                                        <td>{{ tier.discount_percentage }}%</td>
+                                        <td>
+                                            {% for dist in tier_distribution %}
+                                                {% if dist.current_tier__name == tier.name %}
+                                                    {{ dist.count }}
+                                                {% endif %}
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No loyalty tiers defined yet.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3">
+                        <a href="{% url 'admin_dashboard:loyalty_tiers_list' %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-cog me-1"></i> Manage Tiers
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Tier Updates -->
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-history me-1"></i>
+                    Recent Tier Updates
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Current Tier</th>
+                                    <th>Total Spend</th>
+                                    <th>Updated</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loyalty in recent_upgrades %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'admin_dashboard:customer_loyalty_detail' loyalty.user.id %}">
+                                                {{ loyalty.user.username }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            {% if loyalty.current_tier %}
+                                                <span class="badge bg-{{ loyalty.current_tier.color_class|default:'secondary' }}">
+                                                    {{ loyalty.current_tier.name }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-light text-dark">None</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>${{ loyalty.total_spend }}</td>
+                                        <td>{{ loyalty.tier_updated_at|date:"M d, Y" }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No recent tier updates.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3">
+                        <a href="{% url 'admin_dashboard:loyalty_customers_list' %}" class="btn btn-sm btn-success">
+                            <i class="fas fa-users me-1"></i> View All Customers
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recalculate Tiers Modal -->
+<div class="modal fade" id="recalculateModal" tabindex="-1" aria-labelledby="recalculateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recalculateModalLabel">Recalculate Loyalty Tiers</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>This will recalculate all customer loyalty tiers based on their current total spend. This process may take some time for large user bases.</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    This operation cannot be undone. Some customers may be moved to different tiers based on their spending history.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{% url 'admin_dashboard:recalculate_loyalty_tiers' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-sync me-1"></i> Start Recalculation
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

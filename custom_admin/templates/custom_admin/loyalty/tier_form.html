@@ -1,0 +1,205 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ page_title }} - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{{ page_title }}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:loyalty_dashboard' %}">Loyalty Program</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:loyalty_tiers_list' %}">Loyalty Tiers</a></li>
+        <li class="breadcrumb-item active">{% if tier %}Edit{% else %}Create{% endif %} Tier</li>
+    </ol>
+    
+    <div class="row">
+        <div class="col-xl-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="{% if tier %}fas fa-edit{% else %}fas fa-plus{% endif %} me-1"></i>
+                    {% if tier %}Edit{% else %}Create New{% endif %} Loyalty Tier
+                </div>
+                <div class="card-body">
+                    <form method="post" action="" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.color_class|as_crispy_field }}
+                                <div class="mt-2">
+                                    <div class="d-flex flex-wrap color-preview-row">
+                                        <span class="badge bg-primary me-2 mb-2 p-2">Primary</span>
+                                        <span class="badge bg-secondary me-2 mb-2 p-2">Secondary</span>
+                                        <span class="badge bg-success me-2 mb-2 p-2">Success</span>
+                                        <span class="badge bg-danger me-2 mb-2 p-2">Danger</span>
+                                        <span class="badge bg-warning text-dark me-2 mb-2 p-2">Warning</span>
+                                        <span class="badge bg-info text-dark me-2 mb-2 p-2">Info</span>
+                                        <span class="badge bg-dark me-2 mb-2 p-2">Dark</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.minimum_spend|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.discount_percentage|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.benefits|as_crispy_field }}
+                            <small class="form-text text-muted">Enter benefits separated by commas. For example: "Free shipping, Priority support, Exclusive offers"</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description|as_crispy_field }}
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            {{ form.is_active.tag }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                Active Tier
+                            </label>
+                            <div class="form-text">Inactive tiers won't be assigned to customers</div>
+                        </div>
+                        
+                        <div class="d-flex mt-4">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-save me-1"></i> Save Tier
+                            </button>
+                            <a href="{% url 'admin_dashboard:loyalty_tiers_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Tier Preview
+                </div>
+                <div class="card-body">
+                    <div class="tier-preview">
+                        <div class="tier-card p-3 border rounded mb-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <span id="preview-badge" class="badge bg-primary me-2">&nbsp;</span>
+                                <h5 id="preview-name" class="mb-0">Tier Name</h5>
+                            </div>
+                            <div class="mb-2">
+                                <span class="badge bg-light text-dark">Min Spend: $<span id="preview-spend">100</span></span>
+                                <span class="badge bg-light text-dark"><span id="preview-discount">5</span>% Discount</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Benefits:</strong>
+                                <ul id="preview-benefits" class="mb-0 ps-3">
+                                    <li>Benefit 1</li>
+                                </ul>
+                            </div>
+                            <div class="small mt-2" id="preview-description">
+                                Tier description will appear here.
+                            </div>
+                        </div>
+                        
+                        <div class="info-box p-3 border rounded bg-light">
+                            <h6>Tier Guidelines</h6>
+                            <ul class="small mb-0">
+                                <li>Choose a distinctive name for each tier</li>
+                                <li>Set minimum spend values that create achievable progression</li>
+                                <li>Keep discount percentages reasonable (1-15%)</li>
+                                <li>List specific benefits to encourage upgrades</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form elements
+    const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+    const colorInput = document.getElementById('{{ form.color_class.id_for_label }}');
+    const spendInput = document.getElementById('{{ form.minimum_spend.id_for_label }}');
+    const discountInput = document.getElementById('{{ form.discount_percentage.id_for_label }}');
+    const benefitsInput = document.getElementById('{{ form.benefits.id_for_label }}');
+    const descriptionInput = document.getElementById('{{ form.description.id_for_label }}');
+    
+    // Preview elements
+    const previewName = document.getElementById('preview-name');
+    const previewBadge = document.getElementById('preview-badge');
+    const previewSpend = document.getElementById('preview-spend');
+    const previewDiscount = document.getElementById('preview-discount');
+    const previewBenefits = document.getElementById('preview-benefits');
+    const previewDescription = document.getElementById('preview-description');
+    
+    // Update preview function
+    function updatePreview() {
+        // Update name
+        previewName.textContent = nameInput.value || 'Tier Name';
+        
+        // Update badge
+        const colorClass = colorInput.value || 'primary';
+        previewBadge.className = `badge bg-${colorClass} me-2`;
+        
+        // Update spend
+        previewSpend.textContent = spendInput.value || '100';
+        
+        // Update discount
+        previewDiscount.textContent = discountInput.value || '5';
+        
+        // Update benefits
+        const benefits = benefitsInput.value || 'Benefit 1';
+        const benefitsList = benefits.split(',').map(benefit => benefit.trim());
+        
+        previewBenefits.innerHTML = '';
+        benefitsList.forEach(benefit => {
+            if (benefit) {
+                const li = document.createElement('li');
+                li.textContent = benefit;
+                previewBenefits.appendChild(li);
+            }
+        });
+        
+        // Update description
+        previewDescription.textContent = descriptionInput.value || 'Tier description will appear here.';
+    }
+    
+    // Add event listeners
+    nameInput.addEventListener('input', updatePreview);
+    colorInput.addEventListener('change', updatePreview);
+    spendInput.addEventListener('input', updatePreview);
+    discountInput.addEventListener('input', updatePreview);
+    benefitsInput.addEventListener('input', updatePreview);
+    descriptionInput.addEventListener('input', updatePreview);
+    
+    // Initial update
+    updatePreview();
+    
+    // Color preview click handlers
+    document.querySelectorAll('.color-preview-row .badge').forEach(badge => {
+        badge.style.cursor = 'pointer';
+        badge.addEventListener('click', function() {
+            const colorClass = this.className.split('bg-')[1].split(' ')[0];
+            colorInput.value = colorClass;
+            updatePreview();
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 
